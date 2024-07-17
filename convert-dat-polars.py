@@ -1,16 +1,18 @@
 import polars as pl
 import argparse
 import os
+import pandera.polars as pa
 
 db_password = os.getenv("DB_PASSWORD")
 db_name = os.getenv("DB_NAME")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("infile")
+parser.add_argument("outfile")
 args = parser.parse_args()
 
 
-def read_fixed_width_file_as_strs(file_path, col_names_and_widths, *, skip_rows=0):
+def read_fixed_width_file(file_path, col_names_and_widths, *, skip_rows=0, width):
     """
     Reads a fixed-width file into a dataframe.
     Reads all values as strings (as indicated by function name).
@@ -32,7 +34,7 @@ def read_fixed_width_file_as_strs(file_path, col_names_and_widths, *, skip_rows=
     # transform col_names_and_widths into a Dict[cols name, Tuple[start, width]]
     slices = {}
     start = 0
-    for col_name, width in col_names_and_widths.items():
+    for col_name in col_names_and_widths.keys():
         slices[col_name] = (start, width)
         start += width
 
@@ -46,10 +48,12 @@ def read_fixed_width_file_as_strs(file_path, col_names_and_widths, *, skip_rows=
         ]
     ).drop(["full_str"])
 
+    df = df.with_columns(datetime=pl.concat_str('DATE', 'TIME', separator='T').str.strptime(pl.Datetime))
+
     return df
 
 
-def main(if_table_exists="replace", table_name="test"):
+def main(width=26):
     """
     Reads in a file in fwf and saves it as a PostGreSQL database. User must provide their db password and name as env vars
 
@@ -61,50 +65,47 @@ def main(if_table_exists="replace", table_name="test"):
         header = f.readline()
 
     cols = {
-        "DATE": 26,
-        "TIME": 26,
-        "ALARM_STATUS": 26,
-        "CH4": 26,
-        "CH4_dry": 26,
-        "CO2": 26,
-        "CO2_dry": 26,
-        "CavityPressure": 26,
-        "CavityTemp": 26,
-        "DasTemp": 26,
-        "EPOCH_TIME": 26,
-        "EtalonTemp": 26,
-        "FRAC_DAYS_SINCE_JAN1": 26,
-        "FRAC_HRS_SINCE_JAN1": 26,
-        "H2O": 26,
-        "INST_STATUS": 26,
-        "JULIAN_DAYS": 26,
-        "MPVPosition": 26,
-        "OutletValve": 26,
-        "WarmBoxTemp": 26,
-        "solenoid_valves": 26,
-        "species": 26,
+        "DATE": pa.Column(str),
+        "TIME": pa.Column(str),
+        "ALARM_STATUS": pa.Column(float),  # TODO
+        "CH4": pa.Column(float),
+        "CH4_dry": pa.Column(float),
+        "CO2": pa.Column(float),
+        "CO2_dry": pa.Column(float),
+        "CavityPressure": pa.Column(float),
+        "CavityTemp": pa.Column(float),
+        "DasTemp": pa.Column(float),
+        "EPOCH_TIME": pa.Column(float),  # TODO
+        "EtalonTemp": pa.Column(float),
+        "FRAC_DAYS_SINCE_JAN1": pa.Column(float),
+        "FRAC_HRS_SINCE_JAN1": pa.Column(float),
+        "H2O": pa.Column(float),
+        "INST_STATUS": pa.Column(float), # bool?
+        "JULIAN_DAYS": pa.Column(float),
+        "MPVPosition": pa.Column(float), # ???
+        "OutletValve": pa.Column(float),
+        "WarmBoxTemp": pa.Column(float),
+        "solenoid_valves": pa.Column(float),
+        "species": pa.Column(float),
+        "datetime": pa.Column(pl.Datetime)
     }
+    schema = pa.DataFrameSchema(cols, coerce=True, strict=True)
 
     assert header.split() == list(
         cols.keys()
-    ), "column mismatch"  # make sure we have the right columns
-    assert (
-        len(header) - 1 == len(cols) * 26
-    ), "column size mismatch"  # make sure the length of the header is what's expected
+    )[:-1], "column mismatch"  # make sure we have the right columns
 
-    df = read_fixed_width_file_as_strs(args.infile, cols, skip_rows=1)
+    df = read_fixed_width_file(args.infile, cols, skip_rows=1, width=width)
 
-    df.write_database(
-        table_name=table_name,
-        connection=f"postgresql://postgres:{db_password}@localhost:5432/{db_name}",
-        if_table_exists=if_table_exists,
-    )
+    try:
+        schema.validate(df, inplace=True)
+    except pa.errors.SchemaError as exc:
+        print(exc)
+
+    df.write_csv(args.outfile)
 
 
 if __name__ == "__main__":
     main()
 
 #  0.015 seconds
-
-
-# for tomorrow: try to enforce a schema!
