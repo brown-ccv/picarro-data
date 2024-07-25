@@ -1,15 +1,6 @@
 import polars as pl
-import argparse
-import os
 import pandera.polars as pa
-
-db_password = os.getenv("DB_PASSWORD")
-db_name = os.getenv("DB_NAME")
-
-parser = argparse.ArgumentParser()
-parser.add_argument("infile")
-parser.add_argument("outfile")
-args = parser.parse_args()
+import numpy as np
 
 
 def read_fixed_width_file(file_path, col_names_and_widths, *, skip_rows=0, width):
@@ -53,7 +44,7 @@ def read_fixed_width_file(file_path, col_names_and_widths, *, skip_rows=0, width
     return df
 
 
-def main(width=26):
+def convert(infile, width=26):
     """
     Reads in a file in fwf and saves it as a PostGreSQL database. User must provide their db password and name as env vars
 
@@ -61,13 +52,14 @@ def main(width=26):
         if_table_exists: what to do if the table exists in the sql database. See pandas.to_sql for options
         table_name: name for the output table
     """
-    with open(args.infile) as f:
+    with open(infile) as f:
         header = f.readline()
 
+    # TODO: Do I need to make these all required or does strict do that?
     cols = {
         "DATE": pa.Column(str),
         "TIME": pa.Column(str),
-        "ALARM_STATUS": pa.Column(float),  # TODO
+        "ALARM_STATUS": pa.Column(float, checks="int(column) == column"),  # TODO
         "CH4": pa.Column(float),
         "CH4_dry": pa.Column(float),
         "CO2": pa.Column(float),
@@ -91,21 +83,17 @@ def main(width=26):
     }
     schema = pa.DataFrameSchema(cols, coerce=True, strict=True)
 
-    assert header.split() == list(
-        cols.keys()
-    )[:-1], "column mismatch"  # make sure we have the right columns
-
-    df = read_fixed_width_file(args.infile, cols, skip_rows=1, width=width)
+    df = read_fixed_width_file(infile, cols, skip_rows=1, width=width)
 
     try:
         schema.validate(df, inplace=True)
     except pa.errors.SchemaError as exc:
         print(exc)
 
-    df.write_csv(args.outfile)
+    return df
 
 
 if __name__ == "__main__":
-    main()
+    convert("/Users/sbessey/Documents/picarro/data/Data_Backup/2023DecToCurrent/UserData/DataLog_User/2023/11/03/CFADS2652-20231103-162000Z-DataLog_User.dat")
 
-#  0.015 seconds
+# 0.015 seconds
