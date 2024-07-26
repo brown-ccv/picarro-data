@@ -59,7 +59,7 @@ def convert(infile, width=26):
     cols = {
         "DATE": pa.Column(str),
         "TIME": pa.Column(str),
-        "ALARM_STATUS": pa.Column(float, checks="int(column) == column"),  # TODO
+        "ALARM_STATUS": pa.Column(float),
         "CH4": pa.Column(float),
         "CH4_dry": pa.Column(float),
         "CO2": pa.Column(float),
@@ -67,7 +67,7 @@ def convert(infile, width=26):
         "CavityPressure": pa.Column(float),
         "CavityTemp": pa.Column(float),
         "DasTemp": pa.Column(float),
-        "EPOCH_TIME": pa.Column(float),  # TODO
+        "EPOCH_TIME": pa.Column(float),
         "EtalonTemp": pa.Column(float),
         "FRAC_DAYS_SINCE_JAN1": pa.Column(float),
         "FRAC_HRS_SINCE_JAN1": pa.Column(float),
@@ -81,7 +81,7 @@ def convert(infile, width=26):
         "species": pa.Column(float),
         "datetime": pa.Column(pl.Datetime)
     }
-    schema = pa.DataFrameSchema(cols, coerce=True, strict=True)
+    schema = pa.DataFrameSchema(cols, coerce=True, strict=False)
 
     df = read_fixed_width_file(infile, cols, skip_rows=1, width=width)
 
@@ -97,3 +97,4 @@ if __name__ == "__main__":
     convert("/Users/sbessey/Documents/picarro/data/Data_Backup/2023DecToCurrent/UserData/DataLog_User/2023/11/03/CFADS2652-20231103-162000Z-DataLog_User.dat")
 
 # 0.015 seconds
+# TODO: how to check that bools/ints are bools/ints if they're 0-padded
