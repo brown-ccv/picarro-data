@@ -6,6 +6,10 @@ __pycache__/
 # Private Keys Files
 serviceAccount.json
 
+# data
+data/
+*.csv
+
 # C extensions
 *.so
 
