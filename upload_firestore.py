@@ -4,6 +4,9 @@ from polars import DataFrame
 
 
 def initialize():
+    """
+    Initializes and returns the firestore database
+    """
     # initialize sdk
     cred = credentials.Certificate("serviceAccount.json")
     firebase_admin.initialize_app(cred)
@@ -13,6 +16,14 @@ def initialize():
 
 
 def upload_df(db, data: DataFrame, filename: str, date: str) -> None:
+    """
+    Uploads a dataframe into the firestore database
+    args:
+        db: firestore database
+        data: dataframe with data to upload
+        filename: name of the file for collection naming
+        date: date when the data was generaged in YYYY-MM-DD format
+    """
     year, month, day = date.split("-")
     for i, frame in enumerate(data.iter_slices(n_rows=600)):
         datadict = dict(
