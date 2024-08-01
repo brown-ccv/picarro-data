@@ -1,6 +1,17 @@
+import os
+import argparse
+
 import convert_dat
 import upload_firestore
 
-df = convert_dat.convert('/Users/sbessey/Documents/picarro/data/Data_Backup/2023DecToCurrent/UserData/DataLog_User/2023/11/03/CFADS2652-20231103-162000Z-DataLog_User.dat')
+parser = argparse.ArgumentParser()
+parser.add_argument("date", help="Date in YYYY-MM-DD format")
+args = parser.parse_args()
 
+year, month, day = args.date.split("-")
+directory = f"/Users/sbessey/Documents/picarro/data/Data_Backup/2023DecToCurrent/UserData/DataLog_User/{year}/{month}/{day}/"
+db = upload_firestore.initialize()
 
+for filename in os.listdir(directory):
+    df = convert_dat.convert(os.path.join(directory, filename))
+    upload_firestore.upload_df(db, df, filename, args.date)
