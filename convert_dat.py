@@ -61,10 +61,3 @@ def convert(infile: str, width: int=26) -> pl.DataFrame:
         header = f.readline().split()
 
     return read_fixed_width_file(infile, header, skip_rows=1, width=width)
-
-
-if __name__ == "__main__":
-    convert(
-        "/Users/sbessey/Documents/picarro/data/Data_Backup/2023DecToCurrent/UserData/DataLog_User/2023/11/03/CFADS2652-20231103-162000Z-DataLog_User.dat"
-    )
-

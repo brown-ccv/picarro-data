@@ -4,9 +4,10 @@ version = "0.1.0"
 description = "Data pipelines for the Picarro air analyzer"
 authors = ["s-bessey <sam_bessey@brown.edu>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.10"
 polars = "^1.3.0"
 firebase-admin = "^6.5.0"
 
