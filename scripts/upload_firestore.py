@@ -15,6 +15,15 @@ def initialize():
     return firestore.client()
 
 
+def aggregate_df(data: DataFrame):
+    """
+    Returns a dataframe aggregated from every second to every minute
+    args:
+        data: the dataframe to aggregate
+    """
+    pass
+    
+
 def upload_df(db, data: DataFrame, filename: str, date: str) -> None:
     """
     Uploads a dataframe into the firestore database
@@ -25,7 +34,7 @@ def upload_df(db, data: DataFrame, filename: str, date: str) -> None:
         date: date when the data was generaged in YYYY-MM-DD format
     """
     year, month, day = date.split("-")
-    for i, frame in enumerate(data.iter_slices(n_rows=600)):
+    for i, frame in enumerate(data.iter_slices(n_rows=720)):
         datadict = dict(
             [
                 (str(d["datetime"]), d)
