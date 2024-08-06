@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Private Keys Files
+serviceAccount.json
+
+# data
+data/
+*.csv
+
 # C extensions
 *.so
 
