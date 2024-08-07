@@ -1,7 +1,7 @@
 import argparse
 
 import pandas as pd
-import firebase_admin # type: ignore
+import firebase_admin  # type: ignore
 from firebase_admin import credentials, firestore
 
 parser = argparse.ArgumentParser()

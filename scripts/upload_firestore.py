@@ -1,5 +1,5 @@
-import firebase_admin # type: ignore
-from firebase_admin import credentials, firestore
+import firebase_admin  # type: ignore
+from firebase_admin import firestore
 from polars import DataFrame
 
 
@@ -8,21 +8,10 @@ def initialize():
     Initializes and returns the firestore database
     """
     # initialize sdk
-    cred = credentials.Certificate("serviceAccount.json")
-    firebase_admin.initialize_app(cred)
-
+    firebase_admin.initialize_app(options={"projectId": "hastings-picarro"})
     # initialize firestore instance
     return firestore.client()
 
-
-def aggregate_df(data: DataFrame):
-    """
-    Returns a dataframe aggregated from every second to every minute
-    args:
-        data: the dataframe to aggregate
-    """
-    pass
-    
 
 def upload_df(db, data: DataFrame, filename: str, date: str) -> None:
     """

@@ -2,7 +2,9 @@ import polars as pl
 from typing import List
 
 
-def read_fixed_width_file(file_path: str, col_names: List[str], *, skip_rows: int=0, width: int) -> pl.DataFrame:
+def read_fixed_width_file(
+    file_path: str, col_names: List[str], *, skip_rows: int = 0, width: int
+) -> pl.DataFrame:
     """
     Reads a fixed-width file into a dataframe.
     Reads all values as strings (as indicated by function name).
@@ -36,20 +38,14 @@ def read_fixed_width_file(file_path: str, col_names: List[str], *, skip_rows: in
             .str.slice(slice_tuple[0], slice_tuple[1])
             .str.strip_chars()
             .alias(col)
-            .str.replace(".000000", "")
             for col, slice_tuple in slices.items()
         ]
     ).drop(["full_str"])
 
-    df = df.with_columns(
-        datetime=pl.concat_str("DATE", "TIME", separator="T").str.strptime(pl.Datetime),
-        ALARM_STATUS=pl.col("ALARM_STATUS").cast(int) == 1,
-    )
-
     return df
 
 
-def convert(infile: str, width: int=26) -> pl.DataFrame:
+def convert(infile: str, width: int = 26) -> pl.DataFrame:
     """
     Reads in a file in fwf and returns a polars dataframe
 
@@ -61,3 +57,32 @@ def convert(infile: str, width: int=26) -> pl.DataFrame:
         header = f.readline().split()
 
     return read_fixed_width_file(infile, header, skip_rows=1, width=width)
+
+
+def aggregate_df(data, threshold=0.5):
+    """
+    Returns a dataframe aggregated from every second to every minute
+    args:
+        data: the dataframe to aggregate
+    """
+    data = data.with_columns(hour=pl.col("TIME").str.split(":").list.head(1).explode())
+
+    # filter bad alarm status?
+    return (
+        data.group_by("DATE", "hour")
+        .agg(
+            pl.len(),
+            pl.col("CH4").cast(float).mean(),
+            pl.col("CH4_dry").cast(float).mean(),
+            pl.col("CO2").cast(float).mean(),
+            pl.col("CO2_dry").cast(float).mean(),
+            pl.col("CavityPressure").cast(float).mean(),
+            pl.col("CavityTemp").cast(float).mean(),
+            pl.col("DasTemp").cast(float).mean(),
+            pl.col("EtalonTemp").cast(float).mean(),
+            pl.col("H2O").cast(float).mean(),
+            pl.col("INST_STATUS").unique(),
+            pl.col("ALARM_STATUS").unique(),
+        )
+        .filter(pl.col("len") >= threshold * 3600)
+    )
