@@ -22,16 +22,13 @@ def upload_df(db, data: DataFrame, filename: str, date: str) -> None:
         filename: name of the file for collection naming
         date: date when the data was generaged in YYYY-MM-DD format
     """
-    year, month, day = date.split("-")
-    for i, frame in enumerate(data.iter_slices(n_rows=720)):
-        datadict = dict(
-            [
-                (str(d["datetime"]), d)
-                for d in frame.drop(["DATE", "TIME"])
-                .to_pandas()
-                .to_dict(orient="records")
-            ]
-        )
-        db.collection("picarro").document(year).collection(month).document(
-            day
-        ).collection(f"{filename}").document(f"data_{i}").set(datadict)
+    # datadict = data.to_pandas().to_dict(orient="records")
+    # print(datadict)
+    # assert False
+    # db.collection("picarro").document(f"{date.year}").collection(f"{date.month:02}").document(f"{date.day:02}").set(datadict)
+    datadict = dict(
+        [(f"{d['hour']}:00", d) for d in data.to_pandas().to_dict(orient="records")]
+    )
+    # should fields be documents
+    # only next down to a `day_time`
+    db.collection("picarro").document(f"{date.year}").collection(f"{date.month:02}").document(f"{date.day:02}").set(datadict)

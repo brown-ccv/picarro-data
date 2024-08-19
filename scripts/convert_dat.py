@@ -64,12 +64,52 @@ def aggregate_df(data, threshold=0.5):
     Returns a dataframe aggregated from every second to every minute
     args:
         data: the dataframe to aggregate
+        threshold: percent of full data to require for hour to be aggregated
     """
-    data = data.with_columns(hour=pl.col("TIME").str.split(":").list.head(1).explode())
+
+    data = (
+        data.with_columns(hour=pl.col("TIME").str.split(":").list.head(1).explode())
+        .cast(
+            {
+                pl.selectors.by_name(
+                    "CH4",
+                    "CH4_dry",
+                    "CO2",
+                    "CO2_dry",
+                    "CavityPressure",
+                    "CavityTemp",
+                    "DasTemp",
+                    "EtalonTemp",
+                    "H2O",
+                    "INST_STATUS",
+                    "WarmBoxTemp",
+                    "solenoid_valves",
+                    "species",
+                    "ALARM_STATUS",
+                ): pl.Float32
+            }
+        )
+        .filter(
+            ("CH4" != 0)
+            & ("CH4_dry" != 0)
+            & ("CO2" != 0)
+            & ("CO2_dry" != 0)
+            & ("CavityPressure" != 0)
+            & ("CavityTemp" != 0)
+            & ("DasTemp" != 0)
+            & ("EtalonTemp" != 0)
+            & ("H2O" != 0)
+            & ("INST_STATUS" != 0)
+            & ("WarmBoxTemp" != 0)
+            & ("solenoid_valves" != 0)
+            & ("species" != 0)
+            & ("ALARM_STATUS" != 0)
+        )
+    )
 
     # filter bad alarm status?
     return (
-        data.group_by("DATE", "hour")
+        data.group_by("DATE", "hour", "ALARM_STATUS", "INST_STATUS")
         .agg(
             pl.len(),
             pl.col("CH4").cast(float).mean(),
@@ -81,8 +121,8 @@ def aggregate_df(data, threshold=0.5):
             pl.col("DasTemp").cast(float).mean(),
             pl.col("EtalonTemp").cast(float).mean(),
             pl.col("H2O").cast(float).mean(),
-            pl.col("INST_STATUS").unique(),
-            pl.col("ALARM_STATUS").unique(),
         )
-        .filter(pl.col("len") >= threshold * 3600)
+        .filter(
+            pl.col("len") >= threshold * 3600
+        )  # maybe a flag instead? leave len to see how many records at that hour
     )
