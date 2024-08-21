@@ -44,6 +44,12 @@ def upload_data(directory: str, today: datetime, archive: bool):
     # strip out all the incorrect dates
     df = pl.concat(dfs)
     df = df.filter(pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}")
-    df.to_pandas().to_csv(f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.day:02}", index=False)
-    # can we write straight to compressed file
+    df.to_pandas().to_csv(
+        f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.day:02}.zip",
+        index=False,
+        compression={
+            "method": "zip",
+            "archive_name": f"{today.year}_{today.month:02}_{today.day:02}.csv",
+        },
+    )
     return df
