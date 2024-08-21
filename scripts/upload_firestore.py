@@ -30,7 +30,6 @@ def upload_df(db, data: DataFrame, filename: str, date: str) -> None:
     # should fields be documents
     # only next down to a `day_time`
     for key, value in datadict.items():
-        break
         db.collection("picarro").document(f"{date.year}").collection(
             f"{date.month:02}"
         ).document(f"{date.day:02}_{key}").set(value)

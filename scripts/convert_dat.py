@@ -111,7 +111,7 @@ def aggregate_df(data, threshold=0.5):
     return (
         data.group_by("DATE", "hour", "ALARM_STATUS", "INST_STATUS")
         .agg(
-            pl.len(),
+            pl.len() / 3600, # percent of timepoints printed
             pl.col("CH4").cast(float).mean(),
             pl.col("CH4_dry").cast(float).mean(),
             pl.col("CO2").cast(float).mean(),
@@ -122,7 +122,4 @@ def aggregate_df(data, threshold=0.5):
             pl.col("EtalonTemp").cast(float).mean(),
             pl.col("H2O").cast(float).mean(),
         )
-        .filter(
-            pl.col("len") >= threshold * 3600
-        )  # maybe a flag instead? leave len to see how many records at that hour
     )
