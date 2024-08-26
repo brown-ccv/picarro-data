@@ -27,8 +27,6 @@ def upload_df(db, data: DataFrame, filename: str, date: str) -> None:
         [(f"{d['hour']}:00", d) for d in data.to_pandas().to_dict(orient="records")]
     )
 
-    # should fields be documents
-    # only next down to a `day_time`
     for key, value in datadict.items():
         db.collection("picarro").document(f"{date.year}").collection(
             f"{date.month:02}"

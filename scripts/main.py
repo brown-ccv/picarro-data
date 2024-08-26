@@ -17,10 +17,11 @@ args = parser.parse_args()
 
 if args.date:
     date = datetime.date.fromisoformat(args.date)
-else:
+else:  # if no date provided, use today's date
     date = datetime.date.today()
 
 df = upload_storage.upload_data(args.directory, date, args.archive)
+
 upload_firestore.upload_df(
     upload_firestore.initialize(), convert_dat.aggregate_df(df), args.threshold, date
 )

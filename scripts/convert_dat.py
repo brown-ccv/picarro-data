@@ -67,6 +67,7 @@ def aggregate_df(data, threshold=0.5):
         threshold: percent of full data to require for hour to be aggregated
     """
 
+    # add hour and filter to only good data (no alarm status, not warming up)
     data = (
         data.with_columns(hour=pl.col("TIME").str.split(":").list.head(1).explode())
         .cast(
@@ -107,19 +108,16 @@ def aggregate_df(data, threshold=0.5):
         )
     )
 
-    # filter bad alarm status?
-    return (
-        data.group_by("DATE", "hour", "ALARM_STATUS", "INST_STATUS")
-        .agg(
-            pl.len() / 3600, # percent of timepoints printed
-            pl.col("CH4").cast(float).mean(),
-            pl.col("CH4_dry").cast(float).mean(),
-            pl.col("CO2").cast(float).mean(),
-            pl.col("CO2_dry").cast(float).mean(),
-            pl.col("CavityPressure").cast(float).mean(),
-            pl.col("CavityTemp").cast(float).mean(),
-            pl.col("DasTemp").cast(float).mean(),
-            pl.col("EtalonTemp").cast(float).mean(),
-            pl.col("H2O").cast(float).mean(),
-        )
+    # aggregate data by hour. Note: percent timepoints may be over 1
+    return data.group_by("DATE", "hour", "ALARM_STATUS", "INST_STATUS").agg(
+        pl.len() / 3600,  # percent of timepoints printed
+        pl.col("CH4").cast(float).mean(),
+        pl.col("CH4_dry").cast(float).mean(),
+        pl.col("CO2").cast(float).mean(),
+        pl.col("CO2_dry").cast(float).mean(),
+        pl.col("CavityPressure").cast(float).mean(),
+        pl.col("CavityTemp").cast(float).mean(),
+        pl.col("DasTemp").cast(float).mean(),
+        pl.col("EtalonTemp").cast(float).mean(),
+        pl.col("H2O").cast(float).mean(),
     )
