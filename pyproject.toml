@@ -13,6 +13,7 @@ firebase-admin = "^6.5.0"
 fsspec = "^2024.6.1"
 gcsfs = "^2024.6.1"
 gcloud = "^0.18.3"
+pathlib = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.5.5"

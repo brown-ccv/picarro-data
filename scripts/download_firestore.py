@@ -23,7 +23,7 @@ db = firestore.client()
 collection = db.collection("picarro").document(year).collection(month)
 
 docs = collection.stream()  # get all of the data in that collection
-print(docs)
+
 dfs = []
 for doc in docs:
     dfs.append(doc.to_dict())

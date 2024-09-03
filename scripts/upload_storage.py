@@ -1,6 +1,6 @@
 import firebase_admin  # type: ignore
 from firebase_admin import credentials
-import os
+import pathlib
 import datetime
 import convert_dat
 import polars as pl
@@ -19,7 +19,7 @@ def list_files(path):
     args:
         path: path to folder
     """
-    return list(map(lambda x: os.path.join(os.path.abspath(path), x), os.listdir(path)))
+    # return list(map(lambda x: os.path.join(os.path.abspath(path), x), os.listdir(path)))
 
 
 def upload_data(directory: str, today: datetime, archive: bool):
@@ -32,25 +32,27 @@ def upload_data(directory: str, today: datetime, archive: bool):
     # get filenames for upload
     if archive:
         # previous and next date to ensure all datapoints captured
+        # might be able to do this a bit more efficiently with pathlib, *except* that the day before might start in a previous month and therefore previous dir
         yesterday = today - datetime.timedelta(days=1)
         tomorrow = today + datetime.timedelta(days=1)
         paths = [
-            f"{directory}/{day.year}/{day.month:02}/{day.day:02}"
+            pathlib.Path(f"{directory}/{day.year}/{day.month:02}/{day.day:02}")
             for day in [yesterday, today, tomorrow]
+            if pathlib.Path(
+                f"{directory}/{day.year}/{day.month:02}/{day.day:02}"
+            ).is_dir()
         ]
         filenames = []
         for path in paths:
-            try:
-                filenames += list_files(path)
-            except FileNotFoundError:
-                pass
+            filenames += [filename for filename in pathlib.Path(path).iterdir()]
+
     else:
         filenames = list_files(directory)
 
     # read all files
     dfs = []
     for filename in filenames:
-        dfs.append(convert_dat.convert(os.path.join(directory, filename)))
+        dfs.append(convert_dat.convert(filename))
 
     # strip out all the incorrect dates
     df = pl.concat(dfs)

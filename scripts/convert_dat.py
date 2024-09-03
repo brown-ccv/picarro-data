@@ -1,6 +1,28 @@
 import polars as pl
 from typing import List
 
+NON_ZEROES = [
+    "CH4",
+    "CH4_dry",
+    "CO2",
+    "CO2_dry",
+    "CavityPressure",
+    "CavityTemp",
+    "DasTemp",
+    "EtalonTemp",
+    "H2O",
+    "INST_STATUS",
+    "WarmBoxTemp",
+    "species",
+]
+
+ZEROES = [
+    "ALARM_STATUS",
+    "solenoid_valves",
+]
+
+FLOATS = NON_ZEROES + ZEROES
+
 
 def read_fixed_width_file(
     file_path: str, col_names: List[str], *, skip_rows: int = 0, width: int
@@ -32,15 +54,19 @@ def read_fixed_width_file(
         slices[col_name] = (start, width)
         start += width
 
-    df = df.with_columns(
-        [
-            pl.col("full_str")
-            .str.slice(slice_tuple[0], slice_tuple[1])
-            .str.strip_chars()
-            .alias(col)
-            for col, slice_tuple in slices.items()
-        ]
-    ).drop(["full_str"])
+    df = (
+        df.with_columns(
+            [
+                pl.col("full_str")
+                .str.slice(slice_tuple[0], slice_tuple[1])
+                .str.strip_chars()
+                .alias(col)
+                for col, slice_tuple in slices.items()
+            ]
+        )
+        .drop(["full_str"])
+        .cast({pl.selectors.by_name(NON_ZEROES + ZEROES): pl.Float32})
+    )
 
     return df
 
@@ -59,65 +85,33 @@ def convert(infile: str, width: int = 26) -> pl.DataFrame:
     return read_fixed_width_file(infile, header, skip_rows=1, width=width)
 
 
-def aggregate_df(data, threshold=0.5):
+def aggregate_df(data):
     """
     Returns a dataframe aggregated from every second to every minute
     args:
         data: the dataframe to aggregate
-        threshold: percent of full data to require for hour to be aggregated
     """
-
     # add hour and filter to only good data (no alarm status, not warming up)
     data = (
-        data.with_columns(hour=pl.col("TIME").str.split(":").list.head(1).explode())
-        .cast(
-            {
-                pl.selectors.by_name(
-                    "CH4",
-                    "CH4_dry",
-                    "CO2",
-                    "CO2_dry",
-                    "CavityPressure",
-                    "CavityTemp",
-                    "DasTemp",
-                    "EtalonTemp",
-                    "H2O",
-                    "INST_STATUS",
-                    "WarmBoxTemp",
-                    "solenoid_valves",
-                    "species",
-                    "ALARM_STATUS",
-                ): pl.Float32
-            }
+        data.cast({pl.selectors.by_name(NON_ZEROES + ZEROES): pl.Float32})
+        .with_columns(
+            hour=pl.col("TIME").str.strptime(pl.Time, "%H:%M:%S%.f").dt.hour(),
+            condition=pl.all_horizontal(data.select(NON_ZEROES) != 0)
+            & pl.all_horizontal(data.select(ZEROES) == 0),
         )
-        .filter(
-            (pl.col("CH4") != 0)
-            & (pl.col("CH4_dry") != 0)
-            & (pl.col("CO2") != 0)
-            & (pl.col("CO2_dry") != 0)
-            & (pl.col("CavityPressure") != 0)
-            & (pl.col("CavityTemp") != 0)
-            & (pl.col("DasTemp") != 0)
-            & (pl.col("EtalonTemp") != 0)
-            & (pl.col("H2O") != 0)
-            & (pl.col("INST_STATUS") != 0)
-            & (pl.col("WarmBoxTemp") != 0)
-            & (pl.col("solenoid_valves") == 0)
-            & (pl.col("species") != 0.0)
-            & (pl.col("ALARM_STATUS") == 0)
-        )
+        .filter(pl.col("condition"))
     )
-
-    # aggregate data by hour. Note: percent timepoints may be over 1
-    return data.group_by("DATE", "hour", "ALARM_STATUS", "INST_STATUS").agg(
-        pl.len() / 3600,  # percent of timepoints printed
-        pl.col("CH4").cast(float).mean(),
-        pl.col("CH4_dry").cast(float).mean(),
-        pl.col("CO2").cast(float).mean(),
-        pl.col("CO2_dry").cast(float).mean(),
-        pl.col("CavityPressure").cast(float).mean(),
-        pl.col("CavityTemp").cast(float).mean(),
-        pl.col("DasTemp").cast(float).mean(),
-        pl.col("EtalonTemp").cast(float).mean(),
-        pl.col("H2O").cast(float).mean(),
+    return data.group_by("DATE", "hour").agg(
+        pl.mean(
+            "CH4",
+            "CH4_dry",
+            "CO2",
+            "CO2_dry",
+            "CavityPressure",
+            "CavityTemp",
+            "DasTemp",
+            "EtalonTemp",
+            "H2O",
+        ),
+        pct_timepoints=pl.len() / 3600,
     )
