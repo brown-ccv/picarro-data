@@ -20,15 +20,14 @@ firebase_admin.initialize_app(cred)
 # initialize firestore instance
 db = firestore.client()
 
-doc_ref = db.collection("picarro").document(year).collection(month).document(day)
-collections = doc_ref.collections()
+collection = db.collection("picarro").document(year).collection(month)
 
+docs = collection.stream()  # get all of the data in that collection
+print(docs)
 dfs = []
-for collection in collections:
-    docs = collection.stream()  # get all of the data in that collection
-    for doc in docs:
-        dfs.append(pd.DataFrame.from_dict(doc.to_dict()).T)
+for doc in docs:
+    dfs.append(doc.to_dict())
 
-df = pd.concat(dfs)
+df = pd.DataFrame.from_records(dfs)
 
 df.to_csv(f"{args.filepath}/data_{args.date}.csv", index=False)
