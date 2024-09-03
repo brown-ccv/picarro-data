@@ -14,14 +14,6 @@ def init_bucket():
     )
 
 
-def list_files(path):
-    """Lists all files in given path
-    args:
-        path: path to folder
-    """
-    # return list(map(lambda x: os.path.join(os.path.abspath(path), x), os.listdir(path)))
-
-
 def upload_data(directory: str, today: datetime, archive: bool):
     """Uploads data to google cloud storage
     args:
@@ -47,7 +39,7 @@ def upload_data(directory: str, today: datetime, archive: bool):
             filenames += [filename for filename in pathlib.Path(path).iterdir()]
 
     else:
-        filenames = list_files(directory)
+        filenames = pathlib.Path(directory).iterdir()
 
     # read all files
     dfs = []
