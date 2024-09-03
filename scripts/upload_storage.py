@@ -1,3 +1,8 @@
+"""Uploads data to Firestore.
+
+Initializes a firestore database and uploads the raw version of the base data.
+"""
+
 import firebase_admin  # type: ignore
 from firebase_admin import credentials
 import pathlib
@@ -7,7 +12,7 @@ import polars as pl
 
 
 def init_bucket():
-    """Creates bucket for storage"""
+    """Creates bucket for storage."""
     cred = credentials.Certificate("serviceAccount.json")
     firebase_admin.initialize_app(
         cred, {"storageBucket": "hastings-picarro.appspot.com"}
@@ -15,8 +20,9 @@ def init_bucket():
 
 
 def upload_data(directory: str, today: datetime, archive: bool):
-    """Uploads data to google cloud storage
-    args:
+    """Uploads data to google cloud storage.
+
+    Args:
         directory: directory where files to upload are stored
         today: date to upload
         archive: whether this is an upload of previous dates

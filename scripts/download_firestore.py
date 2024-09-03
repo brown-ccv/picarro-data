@@ -1,3 +1,5 @@
+"""Allows download of data from Firestore."""
+
 import argparse
 
 import pandas as pd

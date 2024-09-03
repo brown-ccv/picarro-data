@@ -1,3 +1,5 @@
+"""Runs conversion and upload to Cloud Storage and Firestore."""
+
 import upload_storage
 import upload_firestore
 import convert_dat

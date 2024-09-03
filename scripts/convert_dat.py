@@ -1,3 +1,13 @@
+"""Converts data in fixed-width file to usable data for upload.
+
+Allows reading in of a fixed-width file into a Polars dataframe. Also allows
+functionality for aggregating to hourly data.
+
+Typical usage:
+    df = convert("file_name")
+    aggregate_data(df)
+"""
+
 import polars as pl
 from typing import List
 
@@ -27,8 +37,8 @@ FLOATS = NON_ZEROES + ZEROES
 def read_fixed_width_file(
     file_path: str, col_names: List[str], *, skip_rows: int = 0, width: int
 ) -> pl.DataFrame:
-    """
-    Reads a fixed-width file into a dataframe.
+    """Reads a fixed-width file into a dataframe.
+
     Reads all values as strings (as indicated by function name).
     Strips all values of leading/trailing whitespaces.
 
@@ -38,7 +48,6 @@ def read_fixed_width_file(
             skip_rows: Number of rows to skip at file start
             width: Length of the fixed-width
     """
-
     # Source: adapted from https://github.com/pola-rs/polars/issues/3151#issuecomment-1397354684
 
     df = pl.read_csv(
@@ -72,12 +81,11 @@ def read_fixed_width_file(
 
 
 def convert(infile: str, width: int = 26) -> pl.DataFrame:
-    """
-    Reads in a file in fwf and returns a polars dataframe
+    """Reads in a file in fwf and returns a polars dataframe.
 
-    args:
-        if_table_exists: what to do if the table exists in the sql database. See pandas.to_sql for options
-        table_name: name for the output table
+    Args:
+        infile: filename to read
+        width: column width in fwf
     """
     with open(infile) as f:
         header = f.readline().split()
@@ -86,9 +94,9 @@ def convert(infile: str, width: int = 26) -> pl.DataFrame:
 
 
 def aggregate_df(data):
-    """
-    Returns a dataframe aggregated from every second to every minute
-    args:
+    """Returns a dataframe aggregated from every second to every hour.
+
+    Args:
         data: the dataframe to aggregate
     """
     # add hour and filter to only good data (no alarm status, not warming up)

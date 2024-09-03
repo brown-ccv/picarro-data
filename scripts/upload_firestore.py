@@ -1,12 +1,18 @@
+"""Uploads data to Firestore.
+
+Initializes a firestore database and uploads an aggregated version of the base data.
+
+Typical usage:
+    db = initialize()
+    upload_df(db, data, date)
+"""
 import firebase_admin  # type: ignore
 from firebase_admin import firestore
 from polars import DataFrame
 
 
 def initialize():
-    """
-    Initializes and returns the firestore database
-    """
+    """Initializes and returns the firestore database."""
     # initialize sdk
     firebase_admin.initialize_app(options={"projectId": "hastings-picarro"})
     # initialize firestore instance
@@ -14,9 +20,9 @@ def initialize():
 
 
 def upload_df(db, data: DataFrame, date: str) -> None:
-    """
-    Uploads a dataframe into the firestore database
-    args:
+    """Uploads a dataframe into the firestore database.
+
+    Args:
         db: firestore database
         data: dataframe with data to upload
         date: date when the data was generaged in YYYY-MM-DD format
