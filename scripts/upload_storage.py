@@ -34,11 +34,6 @@ def upload_data(directory: str, today: datetime, archive: bool):
         yesterday = today - datetime.timedelta(days=1)
         tomorrow = today + datetime.timedelta(days=1)
         paths = [
-            # Path(f"{directory}/{day.year}/{day.month:02}/{day.day:02}")
-            # for day in [yesterday, today, tomorrow]
-            # if Path(
-            #     f"{directory}/{day.year}/{day.month:02}/{day.day:02}"
-            # ).is_dir()
             Path(directory) / f"{day.year}" / f"{day.month:02}" / f"{day.day:02}"
             for day in [yesterday, today, tomorrow]
             if (
