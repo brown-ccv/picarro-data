@@ -6,9 +6,10 @@ Typical usage:
     db = initialize()
     upload_df(db, data, date)
 """
+
 import firebase_admin  # type: ignore
 from firebase_admin import firestore
-from polars import DataFrame
+import polars as pl
 
 
 def initialize():
@@ -19,7 +20,7 @@ def initialize():
     return firestore.client()
 
 
-def upload_df(db, data: DataFrame, date: str) -> None:
+def upload_df(db, data: pl.DataFrame, date: str) -> None:
     """Uploads a dataframe into the firestore database.
 
     Args:

@@ -16,7 +16,7 @@ args = parser.parse_args()
 year, month, day = args.date.split("-")
 
 # initialize sdk
-cred = credentials.Certificate("serviceAccount.json")
+cred = credentials.ApplicationDefault()
 firebase_admin.initialize_app(cred)
 
 # initialize firestore instance

@@ -5,7 +5,7 @@ Initializes a firestore database and uploads the raw version of the base data.
 
 import firebase_admin  # type: ignore
 from firebase_admin import credentials
-import pathlib
+from pathlib import Path
 import datetime
 import convert_dat
 import polars as pl
@@ -13,7 +13,7 @@ import polars as pl
 
 def init_bucket():
     """Creates bucket for storage."""
-    cred = credentials.Certificate("serviceAccount.json")
+    cred = credentials.ApplicationDefault()
     firebase_admin.initialize_app(
         cred, {"storageBucket": "hastings-picarro.appspot.com"}
     )
@@ -34,22 +34,28 @@ def upload_data(directory: str, today: datetime, archive: bool):
         yesterday = today - datetime.timedelta(days=1)
         tomorrow = today + datetime.timedelta(days=1)
         paths = [
-            pathlib.Path(f"{directory}/{day.year}/{day.month:02}/{day.day:02}")
+            # Path(f"{directory}/{day.year}/{day.month:02}/{day.day:02}")
+            # for day in [yesterday, today, tomorrow]
+            # if Path(
+            #     f"{directory}/{day.year}/{day.month:02}/{day.day:02}"
+            # ).is_dir()
+            Path(directory) / f"{day.year}" / f"{day.month:02}" / f"{day.day:02}"
             for day in [yesterday, today, tomorrow]
-            if pathlib.Path(
-                f"{directory}/{day.year}/{day.month:02}/{day.day:02}"
+            if (
+                Path(directory) / f"{day.year}" / f"{day.month:02}" / f"{day.day:02}"
             ).is_dir()
         ]
         filenames = []
         for path in paths:
-            filenames += [filename for filename in pathlib.Path(path).iterdir()]
+            filenames += [filename for filename in Path(path).iterdir()]
 
     else:
-        filenames = pathlib.Path(directory).iterdir()
+        filenames = Path(directory).iterdir()
 
     # read all files
     dfs = []
     for filename in filenames:
+        print(filename)
         dfs.append(convert_dat.convert(filename))
 
     # strip out all the incorrect dates
