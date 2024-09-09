@@ -50,8 +50,8 @@ def upload_data(directory: str, today: datetime, archive: bool):
     # read all files
     dfs = []
     for filename in filenames:
-        print(filename)
-        dfs.append(convert_dat.convert(filename))
+        if not filename.match("backup_copy"):
+            dfs.append(convert_dat.convert(filename))
 
     # strip out all the incorrect dates
     df = pl.concat(dfs)
@@ -59,7 +59,7 @@ def upload_data(directory: str, today: datetime, archive: bool):
 
     # upload zip file to google cloud storage
     df.to_pandas().to_csv(
-        f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.day:02}.zip",
+        f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.year}_{today.month:02}_{today.day:02}.zip",
         index=False,
         compression={
             "method": "zip",

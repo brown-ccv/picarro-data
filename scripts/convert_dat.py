@@ -74,7 +74,7 @@ def read_fixed_width_file(
             ]
         )
         .drop(["full_str"])
-        .cast({pl.selectors.by_name(NON_ZEROES + ZEROES): pl.Float32})
+        # .cast({pl.selectors.by_name(NON_ZEROES + ZEROES): pl.Float32})
     )
 
     return df
