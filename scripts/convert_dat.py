@@ -100,9 +100,9 @@ def aggregate_df(data):
         data: the dataframe to aggregate
     """
     # add hour and filter to only good data (no alarm status, not warming up)
+    data = data.cast({pl.selectors.by_name(NON_ZEROES + ZEROES): pl.Float32})
     data = (
-        data.cast({pl.selectors.by_name(NON_ZEROES + ZEROES): pl.Float32})
-        .with_columns(
+        data.with_columns(
             hour=pl.col("TIME").str.strptime(pl.Time, "%H:%M:%S%.f").dt.hour(),
             condition=pl.all_horizontal(data.select(NON_ZEROES) != 0)
             & pl.all_horizontal(data.select(ZEROES) == 0),
