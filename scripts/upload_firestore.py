@@ -10,17 +10,21 @@ Typical usage:
 import firebase_admin  # type: ignore
 from firebase_admin import firestore
 import polars as pl
+import datetime
+import logging
 
 
 def initialize():
     """Initializes and returns the firestore database."""
     # initialize sdk
-    firebase_admin.initialize_app(options={"projectId": "hastings-picarro"})
+    logging.info("Initializing firestore sdk")
+    app = firebase_admin.initialize_app(options={"projectId": "hastings-picarro"})
+    logging.debug(app)
     # initialize firestore instance
     return firestore.client()
 
 
-def upload_df(db, data: pl.DataFrame, date: str) -> None:
+def upload_df(db, data, date) -> None:
     """Uploads a dataframe into the firestore database.
 
     Args:
@@ -28,11 +32,14 @@ def upload_df(db, data: pl.DataFrame, date: str) -> None:
         data: dataframe with data to upload
         date: date when the data was generaged in YYYY-MM-DD format
     """
+    logging.info("uploading dataframe")
     datadict = dict(
         [(f"{d['hour']}:00", d) for d in data.to_pandas().to_dict(orient="records")]
     )
-
-    for key, value in datadict.items():
-        db.collection("picarro").document(f"{date.year}").collection(
-            f"{date.month:02}"
-        ).document(f"{date.day:02}_{key}").set(value)
+    try:
+        for key, value in datadict.items():
+            db.collection("picarro").document(f"{date.year}").collection(
+                f"{date.month:02}"
+            ).document(f"{date.day:02}_{key}").set(value)
+    except Exception as e:
+        logging.error("Firestore upload failed: {e}")

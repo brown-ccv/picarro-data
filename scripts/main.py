@@ -6,7 +6,9 @@ import convert_dat
 import argparse
 import datetime
 from pathlib import WindowsPath
-import sys
+
+import logging
+logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("directory", help="Directory path")
@@ -14,15 +16,40 @@ parser.add_argument("--date", help="Date in YYYY-MM-DD format")
 parser.add_argument("--archive", action="store_true")
 args = parser.parse_args()
 
-sys.stdout=open(WindowsPath("C:/Users", "picarro", "Documents", "picarro-data", "logs", "log.txt"), 'w')
-
 if args.date:
     date = datetime.date.fromisoformat(args.date)
 else:  # if no date provided, use yesterday's date
     date = datetime.date.today() - datetime.timedelta(days=1)
+    
+logfile = WindowsPath("C:/Users", "picarro", "Documents", "picarro-data", "logs", f"{date}.log")
 
+logging.basicConfig(
+    filename=logfile,
+    encoding="utf-8",
+    filemode="a",
+    format="{asctime} - {levelname} - {message}",
+    style="{",
+    level=logging.INFO
+)
+
+logging.info(f"Storage upload for {date}")
 df = upload_storage.upload_data(args.directory, date, args.archive)
 
-# upload_firestore.upload_df(
-#     upload_firestore.initialize(), convert_dat.aggregate_df(df), date
-# )
+app = upload_firestore.initialize()
+logging.debug(app)
+
+try:
+    df = convert_dat.aggregate_df(df)
+except Exception as e:
+    logging.error(f"df aggregation failed: {e}")
+    raise
+
+try:
+    upload_firestore.upload_df(
+        app, df, date
+    )
+except Exception as e:
+    logging.error("Could not upload to firestore: {e}")
+    raise
+    
+logging.info("Upload complete")

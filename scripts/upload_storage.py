@@ -9,6 +9,7 @@ from pathlib import Path
 import datetime
 import convert_dat
 import polars as pl
+import logging
 
 
 def init_bucket():
@@ -29,6 +30,7 @@ def upload_data(directory: str, today: datetime, archive: bool):
     """
     # get filenames for upload
     if archive:
+        logging.info("Uploading archive files")
         # previous and next date to ensure all datapoints captured
         # might be able to do this a bit more efficiently with pathlib, *except* that the day before might start in a previous month and therefore previous dir
         yesterday = today - datetime.timedelta(days=1)
@@ -40,30 +42,45 @@ def upload_data(directory: str, today: datetime, archive: bool):
                 Path(directory) / f"{day.year}" / f"{day.month:02}" / f"{day.day:02}"
             ).is_dir()
         ]
+        logging.info(paths)
+
         filenames = []
         for path in paths:
             filenames += [filename for filename in Path(path).iterdir()]
 
     else:
+        logging.info("Uploading recent files")
         filenames = Path(directory).iterdir()
 
     # read all files
     dfs = []
     for filename in filenames:
         if not filename.match("backup_copy"):
-            dfs.append(convert_dat.convert(filename))
+            logging.info(filename)
+            dfs.append(convert_dat.convert(filename, archive=archive))
 
     # strip out all the incorrect dates
-    df = pl.concat(dfs)
+    try:
+        df = pl.concat(dfs)
+    except ValueError:
+        logging.error("cannot concatenate empty dataframes")
+        raise
+        
     df = df.filter(pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}")
 
-    # upload zip file to google cloud storage
-    df.to_pandas().to_csv(
-        f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.year}_{today.month:02}_{today.day:02}.zip",
-        index=False,
-        compression={
-            "method": "zip",
-            "archive_name": f"{today.year}_{today.month:02}_{today.day:02}.csv",
-        },
-    )
+    logging.info("Uploading to google cloud storage")
+    try:
+        # upload zip file to google cloud storage
+        df.to_pandas().to_csv(
+            f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.year}_{today.month:02}_{today.day:02}.zip",
+            index=False,
+            compression={
+                "method": "zip",
+                "archive_name": f"{today.year}_{today.month:02}_{today.day:02}.csv",
+            },
+        )
+    except Exception as e:
+        logging.error(e)
+        raise
+        
     return df
