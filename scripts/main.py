@@ -34,12 +34,13 @@ logging.basicConfig(
 
 logging.info(f"Storage upload for {date}")
 df = upload_storage.upload_data(args.directory, date, args.archive)
+logging.info(df.columns)
 
 app = upload_firestore.initialize()
 logging.debug(app)
 
 try:
-    df = convert_dat.aggregate_df(df)
+    df = convert_dat.aggregate_df(df, args.archive)
 except Exception as e:
     logging.error(f"df aggregation failed: {e}")
     raise

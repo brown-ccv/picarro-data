@@ -110,7 +110,7 @@ def convert(infile: str, width: int = 26, archive = False) -> pl.DataFrame:
         width: column width in fwf
     """
     if archive:
-        return read_hf(infile)
+        return read_h5(infile)
     else:
         with open(infile) as f:
             header = f.readline().split()
@@ -118,7 +118,7 @@ def convert(infile: str, width: int = 26, archive = False) -> pl.DataFrame:
         return read_fixed_width_file(infile, header, skip_rows=1, width=width)
 
 
-def aggregate_df(data):
+def aggregate_df(data, archive=False):
     """Returns a dataframe aggregated from every second to every hour.
 
     Args:
@@ -126,8 +126,9 @@ def aggregate_df(data):
     """
     logging.info("Aggregating df for firestore")
     # add hour and filter to only good data (no alarm status, not warming up)
-
-    data = data.with_columns(nans=pl.all_horizontal(data!="")).filter(pl.col("nans"))
+    if not archive:
+        data = data.with_columns(nans=pl.all_horizontal(data!="")).filter(pl.col("nans"))
+        
     try:
         data = data.cast({pl.selectors.by_name(NON_ZEROES + ZEROES): pl.Float32})
     except Exception as e:
