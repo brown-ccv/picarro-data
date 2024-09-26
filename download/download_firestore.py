@@ -8,8 +8,8 @@ import firebase_admin  # type: ignore
 from firebase_admin import credentials, firestore
 
 parser = argparse.ArgumentParser()
-parser.add_argument("date", help="Date in YYYY-MM-DD format")
-parser.add_argument("--end", help="End date in YYY-MM-DD format (not inclusive)")
+parser.add_argument("date", help="Date in YYYY-MM format")
+parser.add_argument("--end", help="End date in YYY-MM format (not inclusive)")
 parser.add_argument(
     "-f", "--filepath", help="Where to store the downloaded data", default="data/"
 )
