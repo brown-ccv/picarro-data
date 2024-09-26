@@ -5,7 +5,7 @@ import upload_firestore
 import convert_dat
 import argparse
 import datetime
-from pathlib import WindowsPath
+from pathlib import WindowsPath, Path
 
 import logging
 logger = logging.getLogger(__name__)
@@ -21,7 +21,10 @@ if args.date:
 else:  # if no date provided, use yesterday's date
     date = datetime.date.today() - datetime.timedelta(days=1)
     
-logfile = WindowsPath("C:/Users", "picarro", "Documents", "picarro-data", "logs", f"{date}.log")
+try:    
+    logfile = WindowsPath("C:/Users", "picarro", "Documents", "picarro-data", "logs", f"{date}.log")
+except NotImplementedError:
+    logfile = Path("./log.txt")
 
 logging.basicConfig(
     filename=logfile,

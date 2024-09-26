@@ -42,12 +42,16 @@ def read_h5(
 ):
     logging.debug(f"Reading .zip file at {file_path}")
     dfs = []
+
     zf = ZipFile(file_path)
     logging.info(zf.namelist())
     for filename in zf.namelist():
-        fiz = zf.open(filename)
-        hf = h5py.File(fiz,'r')
-        dfs.append(pl.DataFrame(hf['results'][:]))
+        try:
+            fiz = zf.open(filename)
+            hf = h5py.File(fiz,'r')
+            dfs.append(pl.DataFrame(hf['results'][:]).select(NON_ZEROES + ZEROES + ["time", "timestamp", "FRAC_HRS_SINCE_JAN1"]))
+        except OSError:
+            pass
 
     return pl.concat(dfs)
 
