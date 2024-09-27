@@ -8,6 +8,7 @@ import datetime
 from pathlib import WindowsPath, Path
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser()
@@ -20,9 +21,11 @@ if args.date:
     date = datetime.date.fromisoformat(args.date)
 else:  # if no date provided, use yesterday's date
     date = datetime.date.today() - datetime.timedelta(days=1)
-    
-try:    
-    logfile = WindowsPath("C:/Users", "picarro", "Documents", "picarro-data", "logs", f"{date}.log")
+
+try:
+    logfile = WindowsPath(
+        "C:/Users", "picarro", "Documents", "picarro-data", "logs", f"{date}.log"
+    )
 except NotImplementedError:
     logfile = Path("./log.txt")
 
@@ -32,7 +35,7 @@ logging.basicConfig(
     filemode="a",
     format="{asctime} - {levelname} - {message}",
     style="{",
-    level=logging.INFO
+    level=logging.INFO,
 )
 
 logging.info(f"Storage upload for {date}")
@@ -49,11 +52,9 @@ except Exception as e:
     raise
 
 try:
-    upload_firestore.upload_df(
-        app, df, date
-    )
+    upload_firestore.upload_df(app, df, date)
 except Exception as e:
     logging.error("Could not upload to firestore: {e}")
     raise
-    
+
 logging.info("Upload complete")

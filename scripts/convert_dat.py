@@ -37,9 +37,8 @@ ZEROES = [
 
 FLOATS = NON_ZEROES + ZEROES
 
-def read_h5(
-    file_path: str
-):
+
+def read_h5(file_path: str):
     logging.debug(f"Reading .zip file at {file_path}")
     dfs = []
 
@@ -48,12 +47,17 @@ def read_h5(
     for filename in zf.namelist():
         try:
             fiz = zf.open(filename)
-            hf = h5py.File(fiz,'r')
-            dfs.append(pl.DataFrame(hf['results'][:]).select(NON_ZEROES + ZEROES + ["time", "timestamp", "FRAC_HRS_SINCE_JAN1"]))
+            hf = h5py.File(fiz, "r")
+            dfs.append(
+                pl.DataFrame(hf["results"][:]).select(
+                    NON_ZEROES + ZEROES + ["time", "timestamp", "FRAC_HRS_SINCE_JAN1"]
+                )
+            )
         except OSError:
             pass
 
     return pl.concat(dfs)
+
 
 def read_fixed_width_file(
     file_path: str, col_names: List[str], *, skip_rows: int = 0, width: int = 26
@@ -82,8 +86,7 @@ def read_fixed_width_file(
     except Exception as e:
         logging.error(f" Could not read .dat file: {e}")
         raise
-    
-    
+
     slices = {}
     start = 0
     for col_name in col_names:
@@ -98,15 +101,14 @@ def read_fixed_width_file(
                 .alias(col)
                 for col, slice_tuple in slices.items()
             ]
-        )
-        .drop(["full_str"])
+        ).drop(["full_str"])
         # .cast({pl.selectors.by_name(NON_ZEROES + ZEROES): pl.Float32})
     )
 
     return df
 
 
-def convert(infile: str, width: int = 26, archive = False) -> pl.DataFrame:
+def convert(infile: str, width: int = 26, archive=False) -> pl.DataFrame:
     """Reads in a file in fwf and returns a polars dataframe.
 
     Args:
@@ -131,21 +133,20 @@ def aggregate_df(data, archive=False):
     logging.info("Aggregating df for firestore")
     # add hour and filter to only good data (no alarm status, not warming up)
     if not archive:
-        data = data.with_columns(nans=pl.all_horizontal(data!="")).filter(pl.col("nans"))
-        
+        data = data.with_columns(nans=pl.all_horizontal(data != "")).filter(
+            pl.col("nans")
+        )
+
     try:
         data = data.cast({pl.selectors.by_name(NON_ZEROES + ZEROES): pl.Float32})
     except Exception as e:
         logging.error(f"Could not cast data to float! {e}")
-        
-    data = (
-        data.with_columns(
-            hour=pl.col("TIME").str.strptime(pl.Time, "%H:%M:%S%.f").dt.hour(),
-            condition=pl.all_horizontal(data.select(NON_ZEROES) != 0)
-            & pl.all_horizontal(data.select(ZEROES) == 0),
-        )
-        .filter(pl.col("condition"))
-    )
+
+    data = data.with_columns(
+        hour=pl.col("TIME").str.strptime(pl.Time, "%H:%M:%S%.f").dt.hour(),
+        condition=pl.all_horizontal(data.select(NON_ZEROES) != 0)
+        & pl.all_horizontal(data.select(ZEROES) == 0),
+    ).filter(pl.col("condition"))
     return data.group_by("DATE", "hour").agg(
         pl.mean(
             "CH4",

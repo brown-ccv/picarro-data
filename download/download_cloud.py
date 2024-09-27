@@ -2,6 +2,7 @@
 
 import argparse
 import datetime
+import os
 
 import pandas as pd
 from google.cloud import storage
@@ -20,7 +21,11 @@ else:
     dates = [datetime.date.fromisoformat(args.date)]
 
 bucket_name = "hastings-picarro.appspot.com"
-blob_names = [f"{date.year}/{date.month:02}/{date.year}_{date.month:02}_{date.day:02}.zip" for date in dates]
+blob_names = [
+    f"{date.year}/{date.month:02}/{date.year}_{date.month:02}_{date.day:02}.zip"
+    for date in dates
+]
+
 
 def download_many_blobs_with_transfer_manager(
     bucket_name, blob_names, destination_directory="", workers=1
@@ -65,7 +70,11 @@ def download_many_blobs_with_transfer_manager(
     bucket = storage_client.bucket(bucket_name)
 
     results = transfer_manager.download_many_to_path(
-        bucket, blob_names, destination_directory=destination_directory, max_workers=workers, worker_type=transfer_manager.THREAD
+        bucket,
+        blob_names,
+        destination_directory=destination_directory,
+        max_workers=workers,
+        worker_type=transfer_manager.THREAD,
     )
 
     for name, result in zip(blob_names, results):
@@ -74,8 +83,11 @@ def download_many_blobs_with_transfer_manager(
 
         if isinstance(result, Exception):
             print("Failed to download {} due to exception: {}".format(name, result))
+            print(f"Removing {destination_directory + name}")
+            os.remove(destination_directory + name)
         else:
             print("Downloaded {} to {}.".format(name, destination_directory + name))
+
 
 download_many_blobs_with_transfer_manager(
     bucket_name, blob_names, destination_directory=args.filepath, workers=8

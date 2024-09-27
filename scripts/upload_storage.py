@@ -42,11 +42,12 @@ def upload_blob(bucket_name, source_file_name, destination_blob_name):
     # generation-match precondition using its generation number.
     generation_match_precondition = 0
 
-    blob.upload_from_filename(source_file_name, if_generation_match=generation_match_precondition)
-
-    print(
-        f"File {source_file_name} uploaded to {destination_blob_name}."
+    blob.upload_from_filename(
+        source_file_name, if_generation_match=generation_match_precondition
     )
+
+    print(f"File {source_file_name} uploaded to {destination_blob_name}.")
+
 
 def upload_data(directory: str, today: datetime, archive: bool):
     """Uploads data to google cloud storage.
@@ -60,7 +61,15 @@ def upload_data(directory: str, today: datetime, archive: bool):
     if archive:
         # need to get all filenames here
         try:
-            filenames = [str(x) for x in Path.iterdir(Path(directory) / f"{today.year}" / f"{today.month:02}" / f"{today.day:02}" )]
+            filenames = [
+                str(x)
+                for x in Path.iterdir(
+                    Path(directory)
+                    / f"{today.year}"
+                    / f"{today.month:02}"
+                    / f"{today.day:02}"
+                )
+            ]
         except:
             filenames = [str(x) for x in Path.iterdir(Path(directory))]
         # logging.info("Uploading archive to google cloud storage")
@@ -79,13 +88,15 @@ def upload_data(directory: str, today: datetime, archive: bool):
             if not filename.match("backup_copy"):
                 dfs.append(convert_dat.convert(filename, archive=archive))
 
-    # strip out all the incorrect dates
+        # strip out all the incorrect dates
         try:
             df = pl.concat(dfs)
         except ValueError:
             logging.error("cannot concatenate empty dataframes")
             raise
-        df = df.filter(pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}")
+        df = df.filter(
+            pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}"
+        )
     try:
         # upload zip file to google cloud storage
         logging.info("Uploading to google cloud storage")

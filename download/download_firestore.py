@@ -30,7 +30,9 @@ db = firestore.client()
 
 all_days = []
 for date in dates:
-    collection = db.collection("picarro").document(f"{date.year}").collection(f"{date.month:02}")
+    collection = (
+        db.collection("picarro").document(f"{date.year}").collection(f"{date.month:02}")
+    )
 
     docs = collection.stream()  # get all of the data in that collection
 
