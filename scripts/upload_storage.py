@@ -13,6 +13,8 @@ import logging
 from google.cloud import storage
 
 logger = logging.getLogger("picarro")
+
+
 def init_bucket():
     """Creates bucket for storage."""
     cred = credentials.ApplicationDefault()
@@ -42,11 +44,12 @@ def upload_blob(bucket_name, source_file_name, destination_blob_name):
     # generation-match precondition using its generation number.
     generation_match_precondition = 0
 
-    blob.upload_from_filename(source_file_name, if_generation_match=generation_match_precondition)
-
-    print(
-        f"File {source_file_name} uploaded to {destination_blob_name}."
+    blob.upload_from_filename(
+        source_file_name, if_generation_match=generation_match_precondition
     )
+
+    print(f"File {source_file_name} uploaded to {destination_blob_name}.")
+
 
 def upload_data(directory: str, today: datetime):
     """Uploads data to google cloud storage.
@@ -71,7 +74,7 @@ def upload_data(directory: str, today: datetime):
     except ValueError:
         logger.error("cannot concatenate empty dataframes")
         raise
-        
+
     df = df.filter(pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}")
 
     logger.info("Uploading to google cloud storage")
@@ -88,5 +91,5 @@ def upload_data(directory: str, today: datetime):
     except Exception as e:
         logger.error(e)
         raise
-        
+
     return df

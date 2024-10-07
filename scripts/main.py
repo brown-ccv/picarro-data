@@ -8,6 +8,7 @@ import datetime
 from pathlib import Path
 
 import logging
+
 logger = logging.getLogger("picarro")
 
 parser = argparse.ArgumentParser()
@@ -19,8 +20,10 @@ if args.date:
     date = datetime.date.fromisoformat(args.date)
 else:  # if no date provided, use yesterday's date
     date = datetime.date.today() - datetime.timedelta(days=1)
-    
-logfile = Path("C:/Users", "picarro", "Documents", "picarro-data", "logs", f"{date}.log")
+
+logfile = Path(
+    "C:/Users", "picarro", "Documents", "picarro-data", "logs", f"{date}.log"
+)
 
 logging.basicConfig(
     filename=logfile,
@@ -28,7 +31,7 @@ logging.basicConfig(
     filemode="a",
     format="{asctime} - {levelname} - {message}",
     style="{",
-    level=logging.INFO
+    level=logging.INFO,
 )
 
 logger.info(f"Storage upload for {date}")
@@ -45,11 +48,9 @@ except Exception as e:
     raise
 
 try:
-    upload_firestore.upload_df(
-        app, df, date
-    )
+    upload_firestore.upload_df(app, df, date)
 except Exception as e:
     logger.error("Could not upload to firestore: {e}")
     raise
-    
+
 logger.info("Upload complete")

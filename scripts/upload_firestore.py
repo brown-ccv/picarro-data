@@ -10,7 +10,9 @@ Typical usage:
 import firebase_admin  # type: ignore
 from firebase_admin import firestore
 import logging
+
 logger = logging.getLogger("picarro")
+
 
 def initialize():
     """Initializes and returns the firestore database."""
