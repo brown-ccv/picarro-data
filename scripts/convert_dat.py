@@ -12,8 +12,8 @@ import polars as pl
 import pandas as pd
 from typing import List
 import logging
-from zipfile import ZipFile
-import h5py
+
+logger = logging.getLogger("picarro")
 
 NON_ZEROES = [
     "CH4",
@@ -37,20 +37,6 @@ ZEROES = [
 
 FLOATS = NON_ZEROES + ZEROES
 
-def read_h5(
-    file_path: str
-):
-    logging.debug(f"Reading .zip file at {file_path}")
-    dfs = []
-    zf = ZipFile(file_path)
-    logging.info(zf.namelist())
-    for filename in zf.namelist():
-        fiz = zf.open(filename)
-        hf = h5py.File(fiz,'r')
-        dfs.append(pl.DataFrame(hf['results'][:]))
-
-    return pl.concat(dfs)
-
 def read_fixed_width_file(
     file_path: str, col_names: List[str], *, skip_rows: int = 0, width: int = 26
 ) -> pl.DataFrame:
@@ -66,7 +52,7 @@ def read_fixed_width_file(
             width: Length of the fixed-width
     """
     # Source: adapted from https://github.com/pola-rs/polars/issues/3151#issuecomment-1397354684
-    logging.debug(f"Reading .dat file at {file_path}")
+    logger.debug(f"Reading .dat file at {file_path}")
 
     try:
         df = pl.read_csv(
@@ -76,7 +62,7 @@ def read_fixed_width_file(
             new_columns=["full_str"],
         )
     except Exception as e:
-        logging.error(f" Could not read .dat file: {e}")
+        logger.error(f" Could not read .dat file: {e}")
         raise
     
     
@@ -102,37 +88,34 @@ def read_fixed_width_file(
     return df
 
 
-def convert(infile: str, width: int = 26, archive = False) -> pl.DataFrame:
+def convert(infile: str, width: int = 26) -> pl.DataFrame:
     """Reads in a file in fwf and returns a polars dataframe.
 
     Args:
         infile: filename to read
         width: column width in fwf
     """
-    if archive:
-        return read_h5(infile)
-    else:
-        with open(infile) as f:
-            header = f.readline().split()
+    with open(infile) as f:
+        header = f.readline().split()
 
-        return read_fixed_width_file(infile, header, skip_rows=1, width=width)
+    return read_fixed_width_file(infile, header, skip_rows=1, width=width)
 
 
-def aggregate_df(data, archive=False):
+def aggregate_df(data):
     """Returns a dataframe aggregated from every second to every hour.
 
     Args:
         data: the dataframe to aggregate
     """
-    logging.info("Aggregating df for firestore")
+    logger.info("Aggregating df for firestore")
     # add hour and filter to only good data (no alarm status, not warming up)
-    if not archive:
-        data = data.with_columns(nans=pl.all_horizontal(data!="")).filter(pl.col("nans"))
+    data = data.with_columns(nans=pl.all_horizontal(data!="")).filter(pl.col("nans"))
         
     try:
         data = data.cast({pl.selectors.by_name(NON_ZEROES + ZEROES): pl.Float32})
     except Exception as e:
-        logging.error(f"Could not cast data to float! {e}")
+        logger.error(f"Could not cast data to float! {e}")
+        raise
         
     data = (
         data.with_columns(

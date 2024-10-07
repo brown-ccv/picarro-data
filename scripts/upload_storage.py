@@ -12,7 +12,7 @@ import polars as pl
 import logging
 from google.cloud import storage
 
-
+logger = logging.getLogger("picarro")
 def init_bucket():
     """Creates bucket for storage."""
     cred = credentials.ApplicationDefault()
@@ -48,88 +48,45 @@ def upload_blob(bucket_name, source_file_name, destination_blob_name):
         f"File {source_file_name} uploaded to {destination_blob_name}."
     )
 
-def upload_data(directory: str, today: datetime, archive: bool):
+def upload_data(directory: str, today: datetime):
     """Uploads data to google cloud storage.
 
     Args:
         directory: directory where files to upload are stored
         today: date to upload
-        archive: whether this is an upload of previous dates
     """
     # get filenames for upload
-    if archive:
-        destination_name = f"{today.year}/{today.month:02}/{today.year}_{today.month:02}_{today.day:02}.zip"
-        filename = str(Path(directory) / f"{today.year}" / f"{today.month:02}" / f"{today.day:02}" / "DataLog_Private_20240901_091137.zip")
-        upload_blob("hastings-picarro.appspot.com", filename, destination_name)
-        """
-        logging.info("Uploading archive files")
-        # previous and next date to ensure all datapoints captured
-        # might be able to do this a bit more efficiently with pathlib, *except* that the day before might start in a previous month and therefore previous dir
-        yesterday = today - datetime.timedelta(days=1)
-        tomorrow = today + datetime.timedelta(days=1)
-        paths = [
-            Path(directory) / f"{day.year}" / f"{day.month:02}" / f"{day.day:02}"
-            for day in [yesterday, today, tomorrow]
-            if (
-                Path(directory) / f"{day.year}" / f"{day.month:02}" / f"{day.day:02}"
-            ).is_dir()
-        ]
-        logging.info(paths)
-
-        filenames = []
-        for path in paths:
-            filenames += [filename for filename in Path(path).iterdir()]
-      """
-
-    else:
-        logging.info("Uploading recent files")
-        filenames = Path(directory).iterdir()
+    logger.info("Uploading files")
+    filenames = Path(directory).iterdir()
 
     # read all files
     dfs = []
     for filename in filenames:
         if not filename.match("backup_copy"):
-            dfs.append(convert_dat.convert(filename, archive=archive))
+            dfs.append(convert_dat.convert(filename))
 
     # strip out all the incorrect dates
     try:
         df = pl.concat(dfs)
     except ValueError:
-        logging.error("cannot concatenate empty dataframes")
+        logger.error("cannot concatenate empty dataframes")
         raise
         
-    if not archive:
-        df = df.filter(pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}")
+    df = df.filter(pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}")
 
-    logging.info("Uploading to google cloud storage")
-    if archive:
-        """
-        storage_client = Client()
-        bucket = storage_client.bucket("hastings-picarro.appspot.com")
-        results = transfer_manager.upload_many_from_filenames(
-            bucket, [str(filename) for filename in filenames], source_directory="", max_workers=8
+    logger.info("Uploading to google cloud storage")
+    try:
+        # upload zip file to google cloud storage
+        df.to_pandas().to_csv(
+            f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.year}_{today.month:02}_{today.day:02}.zip",
+            index=False,
+            compression={
+                "method": "zip",
+                "archive_name": f"{today.year}_{today.month:02}_{today.day:02}.csv",
+            },
         )
-        for name, result in zip(filenames, results):
-            # The results list is either `None` or an exception for each filename in
-            # the input list, in order.
-
-            if isinstance(result, Exception):
-                logging.info("Failed to upload {} due to exception: {}".format(name, result))
-            else:
-                logging.info("Uploaded {} to {}.".format(name, bucket.name))"""
-    else:
-        try:
-            # upload zip file to google cloud storage
-            df.to_pandas().to_csv(
-                f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.year}_{today.month:02}_{today.day:02}.zip",
-                index=False,
-                compression={
-                    "method": "zip",
-                    "archive_name": f"{today.year}_{today.month:02}_{today.day:02}.csv",
-                },
-            )
-        except Exception as e:
-            logging.error(e)
-            raise
+    except Exception as e:
+        logger.error(e)
+        raise
         
     return df

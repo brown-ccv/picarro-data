@@ -9,17 +9,15 @@ Typical usage:
 
 import firebase_admin  # type: ignore
 from firebase_admin import firestore
-import polars as pl
-import datetime
 import logging
-
+logger = logging.getLogger("picarro")
 
 def initialize():
     """Initializes and returns the firestore database."""
     # initialize sdk
-    logging.info("Initializing firestore sdk")
+    logger.info("Initializing firestore sdk")
     app = firebase_admin.initialize_app(options={"projectId": "hastings-picarro"})
-    logging.debug(app)
+    logger.debug(app)
     # initialize firestore instance
     return firestore.client()
 
@@ -32,7 +30,7 @@ def upload_df(db, data, date) -> None:
         data: dataframe with data to upload
         date: date when the data was generaged in YYYY-MM-DD format
     """
-    logging.info("uploading dataframe")
+    logger.info("uploading dataframe")
     datadict = dict(
         [(f"{d['hour']}:00", d) for d in data.to_pandas().to_dict(orient="records")]
     )
@@ -42,4 +40,4 @@ def upload_df(db, data, date) -> None:
                 f"{date.month:02}"
             ).document(f"{date.day:02}_{key}").set(value)
     except Exception as e:
-        logging.error("Firestore upload failed: {e}")
+        logger.error("Firestore upload failed: {e}")
