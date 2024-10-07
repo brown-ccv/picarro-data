@@ -14,6 +14,7 @@ logger = logging.getLogger("picarro")
 parser = argparse.ArgumentParser()
 parser.add_argument("directory", help="Directory path")
 parser.add_argument("--date", help="Date in YYYY-MM-DD format")
+parser.add_argument("--archive", action="store_true")
 args = parser.parse_args()
 
 if args.date:
@@ -22,8 +23,12 @@ else:  # if no date provided, use yesterday's date
     date = datetime.date.today() - datetime.timedelta(days=1)
 
 logfile = Path(
-    "C:/Users", "picarro", "Documents", "picarro-data", "logs", f"{date}.log"
+    "logs", f"{date}.log"
 )
+
+directory = args.directory
+if args.archive:
+    directory = Path(directory, date.year, date.month, date.day)
 
 logging.basicConfig(
     filename=logfile,
@@ -35,7 +40,7 @@ logging.basicConfig(
 )
 
 logger.info(f"Storage upload for {date}")
-df = upload_storage.upload_data(args.directory, date)
+df = upload_storage.upload_data(directory, date)
 logger.info(df.columns)
 
 app = upload_firestore.initialize()
