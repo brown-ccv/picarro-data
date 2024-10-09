@@ -23,7 +23,7 @@ else:  # if no date provided, use yesterday's date
     date = datetime.date.today() - datetime.timedelta(days=1)
 
 logfile = Path(
-    "logs", date.year, date.month, f"{date}.log"
+    "logs", f"{date.year}", f"{date.month}", f"{date}.log"
 )
 
 logfile.parent.mkdir(parents=True, exist_ok=True)
