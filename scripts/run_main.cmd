@@ -1,1 +1,0 @@
-PowerShell poetry run python C:\Users\picarro\Documents\picarro-data\scripts\main.py C:\Picarro\G2000\Log\DataLogger\DataLog_Users
