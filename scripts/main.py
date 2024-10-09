@@ -30,7 +30,7 @@ logfile.parent.mkdir(parents=True, exist_ok=True)
 
 directory = args.directory
 if args.archive:
-    directory = Path(directory, date.year, date.month, date.day)
+    directory = Path(directory, f"{date.year}", f"{date.month}", f"{date.day}")
 
 logging.basicConfig(
     filename=logfile,
