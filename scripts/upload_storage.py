@@ -9,6 +9,10 @@ from pathlib import Path
 import datetime
 import convert_dat
 import polars as pl
+import logging
+from google.cloud import storage
+
+logger = logging.getLogger("picarro")
 
 
 def init_bucket():
@@ -19,51 +23,73 @@ def init_bucket():
     )
 
 
-def upload_data(directory: str, today: datetime, archive: bool):
+def upload_blob(bucket_name, source_file_name, destination_blob_name):
+    """Uploads a file to the bucket."""
+    # The ID of your GCS bucket
+    # bucket_name = "your-bucket-name"
+    # The path to your file to upload
+    # source_file_name = "local/path/to/file"
+    # The ID of your GCS object
+    # destination_blob_name = "storage-object-name"
+
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+
+    # Optional: set a generation-match precondition to avoid potential race conditions
+    # and data corruptions. The request to upload is aborted if the object's
+    # generation number does not match your precondition. For a destination
+    # object that does not yet exist, set the if_generation_match precondition to 0.
+    # If the destination object already exists in your bucket, set instead a
+    # generation-match precondition using its generation number.
+    generation_match_precondition = 0
+
+    blob.upload_from_filename(
+        source_file_name, if_generation_match=generation_match_precondition
+    )
+
+    print(f"File {source_file_name} uploaded to {destination_blob_name}.")
+
+
+def upload_data(directory: str, today: datetime):
     """Uploads data to google cloud storage.
 
     Args:
         directory: directory where files to upload are stored
         today: date to upload
-        archive: whether this is an upload of previous dates
     """
     # get filenames for upload
-    if archive:
-        # previous and next date to ensure all datapoints captured
-        # might be able to do this a bit more efficiently with pathlib, *except* that the day before might start in a previous month and therefore previous dir
-        yesterday = today - datetime.timedelta(days=1)
-        tomorrow = today + datetime.timedelta(days=1)
-        paths = [
-            Path(directory) / f"{day.year}" / f"{day.month:02}" / f"{day.day:02}"
-            for day in [yesterday, today, tomorrow]
-            if (
-                Path(directory) / f"{day.year}" / f"{day.month:02}" / f"{day.day:02}"
-            ).is_dir()
-        ]
-        filenames = []
-        for path in paths:
-            filenames += [filename for filename in Path(path).iterdir()]
-
-    else:
-        filenames = Path(directory).iterdir()
+    logger.info("Uploading files")
+    filenames = Path(directory).iterdir()
 
     # read all files
     dfs = []
     for filename in filenames:
-        print(filename)
-        dfs.append(convert_dat.convert(filename))
+        if not filename.match("backup_copy"):
+            dfs.append(convert_dat.convert(filename))
 
     # strip out all the incorrect dates
-    df = pl.concat(dfs)
+    try:
+        df = pl.concat(dfs)
+    except ValueError:
+        logger.error("cannot concatenate empty dataframes")
+        raise
+
     df = df.filter(pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}")
 
-    # upload zip file to google cloud storage
-    df.to_pandas().to_csv(
-        f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.day:02}.zip",
-        index=False,
-        compression={
-            "method": "zip",
-            "archive_name": f"{today.year}_{today.month:02}_{today.day:02}.csv",
-        },
-    )
+    logger.info("Uploading to google cloud storage")
+    try:
+        # upload zip file to google cloud storage
+        df.to_pandas().to_csv(
+            f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.year}_{today.month:02}_{today.day:02}.zip",
+            index=False,
+            compression={
+                "method": "zip",
+                "archive_name": f"{today.year}_{today.month:02}_{today.day:02}.csv",
+            },
+        )
+    except Exception as e:
+        logger.error(e)
+        raise
+
     return df
