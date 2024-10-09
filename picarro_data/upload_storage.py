@@ -2,12 +2,12 @@
 
 Initializes a firestore database and uploads the raw version of the base data.
 """
+from picarro_data.convert_dat import convert
 
 import firebase_admin  # type: ignore
 from firebase_admin import credentials
 from pathlib import Path
 import datetime
-import convert_dat
 import polars as pl
 import logging
 from google.cloud import storage
@@ -66,7 +66,7 @@ def upload_data(directory: str, today: datetime):
     dfs = []
     for filename in filenames:
         if not filename.match("backup_copy"):
-            dfs.append(convert_dat.convert(filename))
+            dfs.append(convert(filename))
 
     # strip out all the incorrect dates
     try:

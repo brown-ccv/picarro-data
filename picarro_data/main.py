@@ -1,61 +1,66 @@
 """Runs conversion and upload to Cloud Storage and Firestore."""
 
-import upload_storage
-import upload_firestore
-import convert_dat
+from picarro_data.upload_storage import upload_data
+from picarro_data.upload_firestore import initialize, upload_df
+from picarro_data.convert_dat import aggregate_df
+
 import argparse
 import datetime
 from pathlib import Path
 
 import logging
 
-logger = logging.getLogger("picarro")
-
 parser = argparse.ArgumentParser()
 parser.add_argument("directory", help="Directory path")
 parser.add_argument("--date", help="Date in YYYY-MM-DD format")
 parser.add_argument("--archive", action="store_true")
-args = parser.parse_args()
 
-if args.date:
-    date = datetime.date.fromisoformat(args.date)
-else:  # if no date provided, use yesterday's date
-    date = datetime.date.today() - datetime.timedelta(days=1)
+def main():
+    args = parser.parse_args()
+    logger = logging.getLogger("picarro")
 
-logfile = Path("logs", date.year, date.month, f"{date}.log")
+    if args.date:
+        date = datetime.date.fromisoformat(args.date)
+    else:  # if no date provided, use yesterday's date
+        date = datetime.date.today() - datetime.timedelta(days=1)
 
-logfile.parent.mkdir(parents=True, exist_ok=True)
+    logfile = Path("logs", date.year, date.month, f"{date}.log")
 
-directory = args.directory
-if args.archive:
-    directory = Path(directory, date.year, date.month, date.day)
+    logfile.parent.mkdir(parents=True, exist_ok=True)
 
-logging.basicConfig(
-    filename=logfile,
-    encoding="utf-8",
-    filemode="a",
-    format="{asctime} - {levelname} - {message}",
-    style="{",
-    level=logging.INFO,
-)
+    directory = args.directory
+    if args.archive:
+        directory = Path(directory, date.year, date.month, date.day)
 
-logger.info(f"Storage upload for {date}")
-df = upload_storage.upload_data(directory, date)
-logger.info(df.columns)
+    logging.basicConfig(
+        filename=logfile,
+        encoding="utf-8",
+        filemode="a",
+        format="{asctime} - {levelname} - {message}",
+        style="{",
+        level=logging.INFO,
+    )
 
-app = upload_firestore.initialize()
-logger.debug(app)
+    logger.info(f"Storage upload for {date}")
+    df = upload_data(directory, date)
+    logger.info(df.columns)
 
-try:
-    df = convert_dat.aggregate_df(df)
-except Exception as e:
-    logger.error(f"df aggregation failed: {e}")
-    raise
+    app = initialize()
+    logger.debug(app)
 
-try:
-    upload_firestore.upload_df(app, df, date)
-except Exception as e:
-    logger.error("Could not upload to firestore: {e}")
-    raise
+    try:
+        df = aggregate_df(df)
+    except Exception as e:
+        logger.error(f"df aggregation failed: {e}")
+        raise
 
-logger.info("Upload complete")
+    try:
+        upload_df(app, df, date)
+    except Exception as e:
+        logger.error("Could not upload to firestore: {e}")
+        raise
+
+    logger.info("Upload complete")
+
+if __name__ == "__main__":
+    main()

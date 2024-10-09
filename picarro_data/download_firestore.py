@@ -1,7 +1,6 @@
 """Allows download of data from Firestore."""
 
 import argparse
-
 import pandas as pd
 import firebase_admin  # type: ignore
 from firebase_admin import credentials, firestore
