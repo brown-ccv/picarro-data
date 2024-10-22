@@ -7,11 +7,20 @@ This github repository contains all scripts for uploading and downloading data f
 ## Setting Up Your Machine
 To run these scripts, you'll need the following:
 * Python version 3.5 or greater. This may be pre-installed on your system; to check use `python3 --version`
-* [Poetry](https://python-poetry.org/), a package manager for python. You can follow the instructions on their page to install
 
-Once both are installed, clone this repository. In the repository directory, run `poetry install` to install all necessary packages.
+Once you've checked that you have the proper version of python installed, create and activate a virtual environment:
 
-After installing packages, use `poetry run gcloud init`. This will allow you to log in with your google firebase credentials so that you can access files.
+Mac:
+```
+python3 -m venv venv
+source venv/bin/activate
+```
+Windows:
+```
+python3 -m venv .venv
+source .venv\Scripts\activate.bat
+```
+After activating your virtual environment, you'll need to install the git repository. 
 
 ## Uploading Data
 The `scripts/` folder includes everything needed to upload data from the Picarro machine to the cloud, as described below. The files consist of:
