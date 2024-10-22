@@ -39,7 +39,6 @@ def download_many_blobs_with_transfer_manager(
     Directories will be created automatically as needed to accommodate blob
     names that include slashes.
     """
-
     # The ID of your GCS bucket
     # bucket_name = "your-bucket-name"
 

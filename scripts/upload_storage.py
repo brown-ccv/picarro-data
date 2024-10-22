@@ -12,6 +12,8 @@ import polars as pl
 import logging
 from google.cloud import storage
 
+logger = logging.getLogger("picarro")
+
 
 def init_bucket():
     """Creates bucket for storage."""
@@ -49,57 +51,35 @@ def upload_blob(bucket_name, source_file_name, destination_blob_name):
     print(f"File {source_file_name} uploaded to {destination_blob_name}.")
 
 
-def upload_data(directory: str, today: datetime, archive: bool):
+def upload_data(directory: str, today: datetime):
     """Uploads data to google cloud storage.
 
     Args:
         directory: directory where files to upload are stored
         today: date to upload
-        archive: whether this is an upload of previous dates
     """
     # get filenames for upload
-    if archive:
-        # need to get all filenames here
-        try:
-            filenames = [
-                str(x)
-                for x in Path.iterdir(
-                    Path(directory)
-                    / f"{today.year}"
-                    / f"{today.month:02}"
-                    / f"{today.day:02}"
-                )
-            ]
-        except:
-            filenames = [str(x) for x in Path.iterdir(Path(directory))]
-        # logging.info("Uploading archive to google cloud storage")
-        # upload_blob("hastings-picarro.appspot.com", filename, destination_name)
-        dfs = []
-        for filename in filenames:
-            dfs.append(convert_dat.read_h5(filename))
+    logger.info("Uploading files")
+    filenames = Path(directory).iterdir()
+
+    # read all files
+    dfs = []
+    for filename in filenames:
+        if not filename.match("backup_copy"):
+            dfs.append(convert_dat.convert(filename))
+
+    # strip out all the incorrect dates
+    try:
         df = pl.concat(dfs)
-    else:
-        logging.info("Uploading recent files")
-        filenames = Path(directory).iterdir()
+    except ValueError:
+        logger.error("cannot concatenate empty dataframes")
+        raise
 
-        # read all files
-        dfs = []
-        for filename in filenames:
-            if not filename.match("backup_copy"):
-                dfs.append(convert_dat.convert(filename, archive=archive))
+    df = df.filter(pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}")
 
-        # strip out all the incorrect dates
-        try:
-            df = pl.concat(dfs)
-        except ValueError:
-            logging.error("cannot concatenate empty dataframes")
-            raise
-        df = df.filter(
-            pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}"
-        )
+    logger.info("Uploading to google cloud storage")
     try:
         # upload zip file to google cloud storage
-        logging.info("Uploading to google cloud storage")
         df.to_pandas().to_csv(
             f"gs://hastings-picarro.appspot.com/{today.year}/{today.month:02}/{today.year}_{today.month:02}_{today.day:02}.zip",
             index=False,
@@ -109,7 +89,7 @@ def upload_data(directory: str, today: datetime, archive: bool):
             },
         )
     except Exception as e:
-        logging.error(e)
+        logger.error(e)
         raise
 
     return df
