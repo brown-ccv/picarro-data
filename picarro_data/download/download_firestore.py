@@ -20,7 +20,9 @@ if args.end:
 else:
     dates = [datetime.date.fromisoformat(args.date + "-01")]
 
+
 def main():
+    """Downloads a dataframe from the firestore database."""
     # initialize sdk
     cred = credentials.ApplicationDefault()
     firebase_admin.initialize_app(cred)
@@ -31,7 +33,9 @@ def main():
     all_days = []
     for date in dates:
         collection = (
-            db.collection("picarro").document(f"{date.year}").collection(f"{date.month:02}")
+            db.collection("picarro")
+            .document(f"{date.year}")
+            .collection(f"{date.month:02}")
         )
 
         docs = collection.stream()  # get all of the data in that collection
@@ -43,6 +47,7 @@ def main():
         all_days.append(pd.DataFrame.from_records(dfs))
 
     pd.concat(all_days).to_csv(f"{args.filepath}/data_{args.date}.csv", index=False)
+
 
 if __name__ == "__main__":
     main()

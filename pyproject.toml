@@ -28,6 +28,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 run_upload = "picarro_data.scripts.main:main"
 download_firestore = "picarro_data.download.download_firestore:main"
+download_cloud = "picarro_data.download.download_cloud:main"
 
 [tool.ruff.lint]
 select = [

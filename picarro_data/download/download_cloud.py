@@ -20,12 +20,6 @@ if args.end:
 else:
     dates = [datetime.date.fromisoformat(args.date)]
 
-bucket_name = "hastings-picarro.appspot.com"
-blob_names = [
-    f"{date.year}/{date.month:02}/{date.year}_{date.month:02}_{date.day:02}.zip"
-    for date in dates
-]
-
 
 def download_many_blobs_with_transfer_manager(
     bucket_name, blob_names, destination_directory="", workers=1
@@ -88,6 +82,13 @@ def download_many_blobs_with_transfer_manager(
             print("Downloaded {} to {}.".format(name, destination_directory + name))
 
 
-download_many_blobs_with_transfer_manager(
-    bucket_name, blob_names, destination_directory=args.filepath, workers=8
-)
+def main():
+    """Run the download function."""
+    bucket_name = "hastings-picarro.appspot.com"
+    blob_names = [
+        f"{date.year}/{date.month:02}/{date.year}_{date.month:02}_{date.day:02}.zip"
+        for date in dates
+    ]
+    download_many_blobs_with_transfer_manager(
+        bucket_name, blob_names, destination_directory=args.filepath, workers=8
+    )
