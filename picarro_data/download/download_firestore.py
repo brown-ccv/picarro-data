@@ -39,7 +39,6 @@ def main():
         dfs = []
         for doc in docs:
             dfs.append(doc.to_dict())
-        print(dfs)
 
         all_days.append(pd.DataFrame.from_records(dfs))
 

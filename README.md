@@ -20,30 +20,43 @@ Windows:
 python3 -m venv .venv
 source .venv\Scripts\activate.bat
 ```
-After activating your virtual environment, you'll need to install the git repository. 
+After activating your virtual environment, you'll need to install the git repository:
+```pip install https://github.com/brown-ccv/picarro-data.git```
 
-## Uploading Data
-The `scripts/` folder includes everything needed to upload data from the Picarro machine to the cloud, as described below. The files consist of:
-* `main.py`: script runner. This handles all connections between the files and command-line arguments.
-* `convert_dat.py`: converts data files into usable files for upload. Also contains aggregation scripts.
-* `upload_storage.py`: uploads data to Google Cloud Storage
-* `upload_firestore.py`: uploads aggregated data to Firestore
 
-Scripts also print output to a log file. See the `logs` folder in the picarro data folder.
+## Logging in to Google Cloud
+In order to upload and download files, you'll need to log in to Google Cloud. First, you'll need to be added to the project on firebase. Grace Berg, Ruby Ho, and Sam Bessey can add you.
 
-### Uploading recent data
-Uploading data that has been printed in the past few days. Files consist of:
-* `run_main.*`: these scripts may be run on the picarro machine through Powershell or the command line to upload the most recent day's data.
-* To run older data that has not yet been archived, use `poetry run python <path_to_main.py> <path_to_data> --date <YYYY-MM-DD>`
+There are two options:
+1. Navigate to the Firebase console to generate a private key (Settings > Service Accounts).
+2. Download the `serviceAccount.json` file to a convenient location.
+3. Run `export GOOGLE_APPLICATION_CREDENTIALS="KEY_PATH"` where `KEY_PATH` is the location you stored your file. Example: `export GOOGLE_APPLICATION_CREDENTIALS="~/Documents/picarro/serviceAccount.json"`
 
-### Uploading archived data
-* `run_archive.ps1`: This script may be run to upload older data. Note: this file currently needs manual editing of the date to run!
-* Alternately, you can use the `main.py` script as above, just add `--archive` to the end
-
-### Automatic uploads
-New data is uploaded daily at 04:00. This is set up in Windows Task Scheduler.
+Alternately, run `gcloud auth application-default login --impersonate-service-account firebase-adminsdk-u3hum@hastings-picarro.iam.gserviceaccount.com` and follow the steps to log in.
 
 ## Downloading data
-Download scripts are found in the `download/` directory.
-* `download_firestore.py` downloads the hourly aggregated data for one or more months. It accepts a start date, (optional) end date, and (optional) path to download location. It can be run with `poetry run python download_firestore.py <start_date as YYYY-MM> --end <end_date as YYYY-MM> -f <output_file_path>`
-* `download_cloud.py` downloads the daily full date for one or more days. It accepts a start date, (optional) end date, and (optional) path to download location. It can be run with `poetry run python download_cloud.py <start_date as YYYY-MM-DD> --end <end_date as YYYY-MM-DD> -f <output_file_path>`. Please note: as of now, it will download an empty zip archive for days that do not exist
+Once you've installed the package and logged in, you can use the provided scripts to download data from the cloud.
+
+### Downloading hourly aggregate data (by month)
+To download the aggregate data, use `download_firestore [date] [options]`
+
+For example, to download all data from August 2024 to your `Documents/data` folder, run:
+```download_firestore 2024-08 -f Documents/data```
+
+To get data for multiple months, use the `--end` flag. For example, to download data from both August and September 2023, run:
+```download_firestore 2023-08 --end 2023-10```
+Note that the end date is non-inclusive.
+
+For more information on the script, run `download_firestore -h`
+
+### Downloading daily data
+To download unedited data from a given day, run `download_cloud [date] [options]`. To download data from August 1, 2024 to your `Documents/data` folder, run:
+`download_cloud 2024-08-01 -f Documents/data`
+
+To get data for multiple days, use the `--end` flag. For example, to download data from August 1st and 2nd, 2023, run:
+```download_cloud 2023-08-01 --end 2023-08-03```
+Note that the end data is non-inclusive.
+
+Additionally, please be aware that this can be a lot of data; downloads may take time.
+
+For more information on the script, run `download_cloud -h`
