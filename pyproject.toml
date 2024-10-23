@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Data pipelines for the Picarro air analyzer"
 authors = ["s-bessey <sam_bessey@brown.edu>"]
 readme = "README.md"
-package-mode = false
+package-mode = true
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -24,6 +24,10 @@ mypy = "^1.11.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+run_upload = "picarro_data.scripts.main:main"
+download_firestore = "picarro_data.download.download_firestore:main"
 
 [tool.ruff.lint]
 select = [
