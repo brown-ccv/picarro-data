@@ -6,7 +6,7 @@ This github repository contains all scripts for uploading and downloading data f
 
 ## Setting Up Your Machine
 To run these scripts, you'll need the following:
-* Python version 3.5 or greater. This may be pre-installed on your system; to check use `python3 --version`
+* Python version 3.10 or greater. This may be pre-installed on your system; to check use `python3 --version` (on windows, also check `python --version` and `py --version` if python3 doesn't work)
 
 Once you've checked that you have the proper version of python installed, create and activate a virtual environment:
 
@@ -20,6 +20,8 @@ Windows:
 python3 -m venv .venv
 source .venv\Scripts\activate.bat
 ```
+note! The python executable might be different on your computer. If this doesn't work, you may need to use `python` or `py` instead of `python3`
+
 After activating your virtual environment, you'll need to install the git repository:
 ```pip install https://github.com/brown-ccv/picarro-data.git```
 
@@ -30,9 +32,9 @@ In order to upload and download files, you'll need to log in to Google Cloud. Fi
 There are two options:
 1. Navigate to the Firebase console to generate a private key (Settings > Service Accounts).
 2. Download the `serviceAccount.json` file to a convenient location.
-3. Run `export GOOGLE_APPLICATION_CREDENTIALS="KEY_PATH"` where `KEY_PATH` is the location you stored your file. Example: `export GOOGLE_APPLICATION_CREDENTIALS="~/Documents/picarro/serviceAccount.json"`
+3. Run `export GOOGLE_APPLICATION_CREDENTIALS="KEY_PATH"` where `KEY_PATH` is the location you stored your file. Example: `export GOOGLE_APPLICATION_CREDENTIALS="/Users/<username>/Documents/picarro/serviceAccount.json"`
 
-Alternately, run `gcloud auth application-default login --impersonate-service-account firebase-adminsdk-u3hum@hastings-picarro.iam.gserviceaccount.com` and follow the steps to log in.
+Alternately, run `gcloud auth application-default login --impersonate-service-account data-download@hastings-picarro.iam.gserviceaccount.com` and follow the steps to log in.
 
 ## Downloading data
 Once you've installed the package and logged in, you can use the provided scripts to download data from the cloud.

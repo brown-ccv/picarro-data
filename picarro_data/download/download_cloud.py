@@ -5,7 +5,7 @@ import datetime
 import os
 
 import pandas as pd
-from google.cloud import storage
+from google.cloud.storage import Client, transfer_manager
 
 parser = argparse.ArgumentParser()
 parser.add_argument("date", help="Date in YYYY-MM-DD format")
@@ -56,8 +56,6 @@ def download_many_blobs_with_transfer_manager(
     # some CPU and memory resources until finished. Threads can be used instead
     # of processes by passing `worker_type=transfer_manager.THREAD`.
     # workers=8
-
-    from google.cloud.storage import Client, transfer_manager
 
     storage_client = Client()
     bucket = storage_client.bucket(bucket_name)
