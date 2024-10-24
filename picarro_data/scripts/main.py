@@ -14,7 +14,6 @@ logger = logging.getLogger("picarro")
 parser = argparse.ArgumentParser()
 parser.add_argument("directory", help="Directory path")
 parser.add_argument("--date", help="Date in YYYY-MM-DD format")
-parser.add_argument("--archive", action="store_true")
 args = parser.parse_args()
 
 if args.date:
@@ -22,15 +21,11 @@ if args.date:
 else:  # if no date provided, use yesterday's date
     date = datetime.date.today() - datetime.timedelta(days=1)
 
-logfile = Path(
-    "logs", f"{date.year}", f"{date.month}", f"{date}.log"
-)
+logfile = Path("logs", f"{date.year}", f"{date.month}", f"{date}.log")
 
 logfile.parent.mkdir(parents=True, exist_ok=True)
 
 directory = args.directory
-if args.archive:
-    directory = Path(directory, f"{date.year}", f"{date.month}", f"{date.day}")
 
 logging.basicConfig(
     filename=logfile,
