@@ -4,6 +4,7 @@ import argparse
 import datetime
 
 import pandas as pd
+from pathlib import Path
 import firebase_admin  # type: ignore
 from firebase_admin import credentials, firestore
 
@@ -46,7 +47,15 @@ def main():
 
         all_days.append(pd.DataFrame.from_records(dfs))
 
-    pd.concat(all_days).to_csv(f"{args.filepath}/data_{args.date}.csv", index=False)
+    # make filepath if it doesn't exist
+    Path(args.filepath).mkdir(parents=True, exist_ok=True)
+
+    if args.end:
+        pd.concat(all_days).to_csv(
+            f"{args.filepath}/data_{args.date}_{args.end}.csv", index=False
+        )
+    else:
+        pd.concat(all_days).to_csv(f"{args.filepath}/data_{args.date}.csv", index=False)
 
 
 if __name__ == "__main__":
