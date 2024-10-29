@@ -4,6 +4,9 @@ This github repository contains all scripts for uploading and downloading data f
 * The firestore database consists of *hourly aggregate* data for the Picarro machine,combined into `Year/Month` collections
 * Google Cloud Storage holds the raw data with no aggregation
 
+[!NOTE]
+For windows, these instructions assume you're using Powershell.
+
 ## First time setup
 ### Installing scripts
 To run these scripts, you'll need the following:
@@ -21,7 +24,8 @@ Windows:
 python3 -m venv .venv
 source .venv\Scripts\activate.bat
 ```
-note! The python executable might be different on your computer. If this doesn't work, you may need to use `python` or `py` instead of `python3`
+[!NOTE]
+The python executable might be different on your computer. If this doesn't work, you may need to use `python` or `py` instead of `python3`
 
 After activating your virtual environment, you'll need to install the git repository:
 ```pip install git+https://github.com/brown-ccv/picarro-data.git```
