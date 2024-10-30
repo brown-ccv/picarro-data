@@ -53,9 +53,12 @@ def main():
     save_path = Path(args.filepath)
     save_path.mkdir(parents=True, exist_ok=True)
 
-    save_filename = f"data_{args.date}_{args.end}.csv" if args.end else f"data_{args.date}.csv"
+    save_filename = (
+        f"data_{args.date}_{args.end}.csv" if args.end else f"data_{args.date}.csv"
+    )
 
     pd.concat(all_days).to_csv(save_path / save_filename, index=False)
+
 
 if __name__ == "__main__":
     main()
