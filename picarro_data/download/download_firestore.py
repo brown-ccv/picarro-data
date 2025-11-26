@@ -7,6 +7,7 @@ import pandas as pd
 from pathlib import Path
 import firebase_admin  # type: ignore
 from firebase_admin import credentials, firestore
+from google.auth.credentials import AnonymousCredentials
 
 parser = argparse.ArgumentParser()
 parser.add_argument("date", help="Date in YYYY-MM format")
@@ -25,7 +26,7 @@ else:
 def main():
     """Downloads a dataframe from the firestore database."""
     # initialize sdk
-    cred = credentials.ApplicationDefault()
+    cred = AnonymousCredentials()
     firebase_admin.initialize_app(cred)
 
     # initialize firestore instance
