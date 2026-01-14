@@ -7,7 +7,7 @@ import firebase_admin  # type: ignore
 from firebase_admin import credentials
 from pathlib import Path
 import datetime
-import convert_dat
+import concat_dat
 import polars as pl
 import logging
 from google.cloud import storage
@@ -58,23 +58,11 @@ def upload_data(directory: str, today: datetime):
         directory: directory where files to upload are stored
         today: date to upload
     """
-    # get filenames for upload
+    # get filenames for upload and concatenate
     logger.info("Uploading files")
-    filenames = Path(directory).iterdir()
-
-    # read all files
-    dfs = []
-    for filename in filenames:
-        if not filename.match("backup_copy"):
-            dfs.append(convert_dat.convert(filename))
+    df = concat_dat.concat_dat_files(directory)
 
     # strip out all the incorrect dates
-    try:
-        df = pl.concat(dfs)
-    except ValueError:
-        logger.error("cannot concatenate empty dataframes")
-        raise
-
     df = df.filter(pl.col("DATE") == f"{today.year}-{today.month:02}-{today.day:02}")
 
     logger.info("Uploading to google cloud storage")
