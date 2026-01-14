@@ -1,7 +1,7 @@
 # Picarro Data Upload and Download
 This github repository contains all scripts for uploading and downloading data from Google Cloud Storage and Firestore
 
-* The firestore database consists of *hourly aggregate* data for the Picarro machine,combined into `Year/Month` collections
+* The firestore database consists of *hourly aggregate* data for the Picarro machine, combined into `Year/Month` collections
 * Google Cloud Storage holds the raw data with no aggregation
 
 > [!NOTE]
@@ -75,3 +75,7 @@ Note that the end data is non-inclusive.
 Additionally, please be aware that this can be a lot of data; downloads may take time.
 
 For more information on the script, run `download_cloud -h`
+
+## Uploading data
+### Uploading daily to Cloud Store
+### Uploading hourly to Firestore

@@ -1,4 +1,4 @@
-"""Uploads data to Firestore.
+"""Uploads data to Cloud Storage.
 
 Initializes a firestore database and uploads the raw version of the base data.
 """
