@@ -1,4 +1,4 @@
-"""Runs upload to Firestore only - uploads current hour's data."""
+"""Runs upload to Firestore."""
 
 import upload_firestore
 import convert_dat
@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("directory", help="Directory path")
 args = parser.parse_args()
 
-# Always use current date and hour for hourly uploads
+# use current date and hour for hourly uploads
 date = datetime.date.today()
 hour = datetime.datetime.now().hour
 

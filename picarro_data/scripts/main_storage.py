@@ -1,4 +1,4 @@
-"""Runs upload to Cloud Storage only."""
+"""Runs upload to Cloud Storage."""
 
 import upload_storage
 import argparse
