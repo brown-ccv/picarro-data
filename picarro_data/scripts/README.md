@@ -1,7 +1,7 @@
 # Uploading Data
 The `scripts/` folder includes everything needed to upload data from the Picarro machine to the cloud, as described below. The files consist of:
-* `main_storage.py`: script runner for Cloud Storage uploads. Handles raw data upload to Google Cloud Storage.
-* `main_firestore.py`: script runner for Firestore uploads. Handles aggregated data upload to Firestore.
+* `main_storage.py`: script runner for Cloud Storage uploads. Handles raw data upload to Google Cloud Storage (daily).
+* `main_firestore.py`: script runner for Firestore uploads. Handles aggregated data upload to Firestore (hourly).
 * `convert_dat.py`: converts data files into usable files for upload. Also contains aggregation scripts.
 * `upload_storage.py`: uploads data to Google Cloud Storage
 * `upload_firestore.py`: uploads aggregated data to Firestore
@@ -9,12 +9,18 @@ The `scripts/` folder includes everything needed to upload data from the Picarro
 Scripts also print output to a log file. See the `logs` folder in the picarro data folder.
 
 ## Automatic uploads
-New data is uploaded daily at 04:00. This is set up in Windows Task Scheduler on the computer connected to the Picarro machine.
+- **Cloud Storage**: Uploaded daily at 04:00 (set up in Windows Task Scheduler)
+- **Firestore**: Uploaded hourly (every hour on the hour)
+  - Set up in Windows Task Scheduler or cron to run `run_firestore_hourly.ps1` every hour
+  - Automatically uploads the current hour's data
 
-## Uploading recent data
-Uploading data that has been printed in the past few days. Files consist of:
-* `run_main.*`: these scripts may be run on the picarro machine through Powershell or the command line to upload the most recent day's data to both Cloud Storage and Firestore.
-* Manual uploads:
-  * Cloud Storage only: `poetry run python <path_to_main_storage.py> <path_to_data> --date <YYYY-MM-DD>`
-  * Firestore only: `poetry run python <path_to_main_firestore.py> <path_to_data> --date <YYYY-MM-DD>`
-  * Both (runs both scripts): Use the `run_main.*` scripts
+## Manual Upload
+To manually trigger an upload for the current hour:
+
+```bash
+# Upload current hour's data to Firestore
+poetry run python main_firestore.py C:\Picarro\G2000\Log\DataLogger\DataLog_User
+
+# Upload current day's data to Cloud Storage
+poetry run python main_storage.py C:\Picarro\G2000\Log\DataLogger\DataLog_User
+```

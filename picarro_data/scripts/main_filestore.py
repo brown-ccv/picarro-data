@@ -1,23 +1,23 @@
-"""Runs upload to Firestore only."""
+"""Runs upload to Firestore only - uploads current hour's data."""
 
 import upload_firestore
 import convert_dat
+import concat_dat
 import argparse
 import datetime
 from pathlib import Path
 import logging
+import polars as pl
 
 logger = logging.getLogger("picarro")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("directory", help="Directory path")
-parser.add_argument("--date", help="Date in YYYY-MM-DD format")
 args = parser.parse_args()
 
-if args.date:
-    date = datetime.date.fromisoformat(args.date)
-else:
-    date = datetime.date.today() - datetime.timedelta(days=1)
+# Always use current date and hour for hourly uploads
+date = datetime.date.today()
+hour = datetime.datetime.now().hour
 
 logfile = Path("logs", f"{date.year}", f"{date.month}", f"{date}.log")
 logfile.parent.mkdir(parents=True, exist_ok=True)
@@ -33,13 +33,20 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-logger.info(f"Firestore upload for {date}")
+logger.info(f"Firestore upload for {date} hour {hour}")
 
 app = upload_firestore.initialize()
 logger.debug(app)
 
 try:
-    df = convert_dat.aggregate_df(directory, date)
+    # Read and concatenate .dat files
+    df = concat_dat.concat_dat_files(directory)
+    
+    # Filter by date
+    df = df.filter(pl.col("DATE") == f"{date.year}-{date.month:02}-{date.day:02}")
+    
+    # Aggregate the data for the specified hour
+    df = convert_dat.aggregate_df(df, hour=hour)
 except Exception as e:
     logger.error(f"df aggregation failed: {e}")
     raise

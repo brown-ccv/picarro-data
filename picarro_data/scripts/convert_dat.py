@@ -99,13 +99,14 @@ def convert(infile: str, width: int = 26) -> pl.DataFrame:
     return read_fixed_width_file(infile, header, skip_rows=1, width=width)
 
 
-def aggregate_df(data):
+def aggregate_df(data, hour=None):
     """Returns a dataframe aggregated from every second to every hour.
 
     Args:
         data: the dataframe to aggregate
+        hour: optional hour (0-23) to filter data. If None, aggregates all hours.
     """
-    logger.info("Aggregating df for firestore")
+    logger.info(f"Aggregating df for firestore{f' (hour {hour})' if hour is not None else ''}")
     # add hour and filter to only good data (no alarm status, not warming up)
     data = data.with_columns(nans=pl.all_horizontal(data != "")).filter(pl.col("nans"))
 
@@ -120,6 +121,11 @@ def aggregate_df(data):
         condition=pl.all_horizontal(data.select(NON_ZEROES) != 0)
         & pl.all_horizontal(data.select(ZEROES) == 0),
     ).filter(pl.col("condition"))
+    
+    # Filter by specific hour if provided
+    if hour is not None:
+        data = data.filter(pl.col("hour") == hour)
+    
     return data.group_by("DATE", "hour").agg(
         pl.mean(
             "CH4",
