@@ -1,1 +1,0 @@
-poetry run python main.py C:\Picarro\G2000\Log\DataLogger\DataLog_User
