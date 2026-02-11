@@ -106,6 +106,7 @@ def aggregate_df(data, hour=None):
         data: the dataframe to aggregate
         hour: optional hour (0-23) to filter data. If None, aggregates all hours.
     """
+
     logger.info(f"Aggregating df for firestore{f' (hour {hour})' if hour is not None else ''}")
     # add hour and filter to only good data (no alarm status, not warming up)
     data = data.with_columns(nans=pl.all_horizontal(data != "")).filter(pl.col("nans"))
