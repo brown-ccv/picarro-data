@@ -32,10 +32,9 @@ def upload_df(db, data, date) -> None:
         data: dataframe with data to upload
         date: date when the data was generaged in YYYY-MM-DD format
     """
-    records = data.to_pandas().to_dict(orient="records")
-    logger.info(f"uploading dataframe ({len(records)} hour(s))")
+    logger.info("uploading dataframe")
     datadict = dict(
-        [(f"{d['hour']}:00", d) for d in records]
+        [(f"{d['hour']}:00", d) for d in data.to_pandas().to_dict(orient="records")]
     )
     try:
         for key, value in datadict.items():
@@ -43,4 +42,4 @@ def upload_df(db, data, date) -> None:
                 f"{date.month:02}"
             ).document(f"{date.day:02}_{key}").set(value)
     except Exception as e:
-        logger.error(f"Firestore upload failed: {e}")
+        logger.error("Firestore upload failed: {e}")

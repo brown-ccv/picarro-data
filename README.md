@@ -1,7 +1,7 @@
 # Picarro Data Upload and Download
 This github repository contains all scripts for uploading and downloading data from Google Cloud Storage and Firestore
 
-* The firestore database consists of *hourly aggregate* data for the Picarro machine,combined into `Year/Month` collections
+* The firestore database consists of *hourly aggregate* data for the Picarro machine, combined into `Year/Month` collections
 * Google Cloud Storage holds the raw data with no aggregation
 
 > [!NOTE]
@@ -75,3 +75,26 @@ Note that the end data is non-inclusive.
 Additionally, please be aware that this can be a lot of data; downloads may take time.
 
 For more information on the script, run `download_cloud -h`
+
+## Uploading data
+The upload scripts are located in `picarro_data/scripts/`. There are two main upload processes:
+
+### Uploading daily to Cloud Storage
+Raw data is uploaded daily to Google Cloud Storage at 04:00 via Windows Task Scheduler on the Picarro machine.
+
+To manually upload today's data:
+```bash
+poetry run python picarro_data/scripts/main_storage.py C:\Picarro\G2000\Log\DataLogger\DataLog_User
+```
+
+### Uploading hourly to Firestore
+Aggregated data is uploaded hourly to Firestore. The script automatically uploads the current hour's data.
+
+To manually upload the current hour:
+```bash
+poetry run python picarro_data/scripts/main_firestore.py C:\Picarro\G2000\Log\DataLogger\DataLog_User
+```
+
+For automated hourly uploads, set up `run_firestore_hourly.ps1` in Windows Task Scheduler to run every hour.
+
+See `picarro_data/scripts/README.md` for more detailed information about the upload scripts.
